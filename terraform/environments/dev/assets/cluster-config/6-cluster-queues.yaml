@@ -1,0 +1,57 @@
+# Copyright 2022 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+apiVersion: kueue.x-k8s.io/v1beta1
+kind: ClusterQueue
+metadata:
+  name: dts-dmo-admin-cq
+spec:
+  cohort: dts-dmo-cohort
+  namespaceSelector:
+    matchLabels:
+      kubernetes.io/metadata.name: dts-dmo-admin #Only dts-dmo-admin can submit jobs direclty to this queue, but will be able to share it through the cohort
+  queueingStrategy: BestEffortFIFO # Default queueing strategy
+  resourceGroups:
+  - coveredResources: ["cpu", "memory", "ephemeral-storage"]
+    flavors:
+    - name: "default-flavor"
+      resources:
+      - name: "cpu"
+        nominalQuota: ${admin_queue_cpu_quota}
+      - name: "memory"
+        nominalQuota: ${admin_queue_memory_quota}
+      - name: "ephemeral-storage"
+        nominalQuota: ${admin_queue_storage_quota}
+---
+apiVersion: kueue.x-k8s.io/v1beta1
+kind: ClusterQueue
+metadata:
+  name: dts-dmo-user-cq
+spec:
+  cohort: dts-dmo-cohort
+  namespaceSelector:
+    matchLabels:
+      kubernetes.io/metadata.name: dts-dmo-user #Only dts-dmo-user can submit jobs direclty to this queue, but will be able to share it through the cohort
+  queueingStrategy: BestEffortFIFO # Default queueing strategy
+  resourceGroups:
+  - coveredResources: ["cpu", "memory", "ephemeral-storage"]
+    flavors:
+    - name: "default-flavor"
+      resources:
+      - name: "cpu"
+        nominalQuota: ${user_queue_cpu_quota}
+      - name: "memory"
+        nominalQuota: ${user_queue_memory_quota}
+      - name: "ephemeral-storage"
+        nominalQuota: ${user_queue_storage_quota}

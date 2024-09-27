@@ -1,0 +1,6 @@
+runtime: nodejs20
+entrypoint: node ./server.js
+service_account: sa-app-dts-dmo-ui@dmo-test-higashi.iam.gserviceaccount.com #TODO: STEP 4
+vpc_access_connector:
+  name: projects/dmo-test-higashi/locations/us-central1/connectors/dts-dmo-serverless-vpc #TODO: STEP 4
+  egress_setting: all-traffic

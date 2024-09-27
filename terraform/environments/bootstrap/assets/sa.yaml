@@ -1,0 +1,160 @@
+service_accounts:
+  "drive-transfer-service-tf":
+    prefix: "sa"
+    sa_iam:
+      "roles/iam.serviceAccountUser":
+        - "serviceAccount:sa-drive-transfer-service-tf@dmo-test-higashi.iam.gserviceaccount.com" #TODO: STEP 4
+        - "group:allAdmins@derekmoliver.altostrat.com" #TODO: STEP 4
+        # - "serviceAccount:service-48703874495@gcp-sa-sourcemanager.iam.gserviceaccount.com" #TODO: STEP 11
+      "roles/iam.serviceAccountTokenCreator":
+        - "group:allAdmins@derekmoliver.altostrat.com" #TODO: STEP 4
+        - "serviceAccount:sa-drive-transfer-service-tf@dmo-test-higashi.iam.gserviceaccount.com" #TODO: STEP 4
+    project_iam:
+      "dmo-test-higashi": #TODO: STEP 4
+        - "roles/appengine.appAdmin"
+        - "roles/appengine.appCreator"
+        - "roles/artifactregistry.admin"
+        - "roles/cloudbuild.builds.editor"
+        - "roles/cloudbuild.connectionAdmin"
+        - "roles/cloudbuild.workerPoolOwner"
+        - "roles/cloudbuild.workerPoolUser"
+        - "roles/clouddeploy.admin"
+        - "roles/compute.admin"
+        - "roles/dns.admin"
+        - "roles/firebase.admin"
+        - "roles/iam.serviceAccountAdmin"
+        - "roles/logging.logWriter"
+        - "roles/monitoring.metricWriter"
+        - "roles/resourcemanager.projectIamAdmin"
+        - "roles/secretmanager.admin"
+        - "roles/vpcaccess.admin"
+        - "roles/serviceusage.serviceUsageAdmin"
+        - "roles/storage.admin"
+    storage_iam:
+      "bkt-dts-dmo-dts-dmo-tf-state":  #TODO: STEP 4
+        - "roles/storage.admin"
+  "drive-transfer-service-api":
+    prefix: "cb"
+    sa_iam:
+      "roles/iam.serviceAccountUser":
+        - "serviceAccount:sa-drive-transfer-service-tf@dmo-test-higashi.iam.gserviceaccount.com" #TODO: STEP 4
+        - "group:allAdmins@derekmoliver.altostrat.com" #TODO: STEP 4
+        # - "serviceAccount:service-48703874495@gcp-sa-sourcemanager.iam.gserviceaccount.com" #TODO: STEP 11
+      "roles/iam.serviceAccountTokenCreator":
+        - "serviceAccount:sa-drive-transfer-service-tf@dmo-test-higashi.iam.gserviceaccount.com" #TODO: STEP 4
+    project_iam:
+      "dmo-test-higashi": #TODO: STEP 4
+        - "roles/cloudbuild.builds.builder"
+        - "roles/cloudbuild.workerPoolUser"
+        - "roles/clouddeploy.admin"
+        - "roles/secretmanager.admin"
+        - "roles/secretmanager.secretAccessor"
+        - "roles/storage.admin"
+    storage_iam:
+      "bkt-dts-dmo-dts-dmo-cb-logs": #TODO: STEP 4
+        - "roles/storage.admin"
+      "bkt-dts-dmo-dts-dmo-cb-artifacts": #TODO: STEP 4
+        - "roles/storage.admin"
+  "drive-transfer-service-ui":
+    prefix: "cb"
+    sa_iam:
+      "roles/iam.serviceAccountUser":
+        - "serviceAccount:sa-drive-transfer-service-tf@dmo-test-higashi.iam.gserviceaccount.com" #TODO: STEP 4
+        - "group:allAdmins@derekmoliver.altostrat.com" #TODO: STEP 4
+        # - "serviceAccount:service-48703874495@gcp-sa-sourcemanager.iam.gserviceaccount.com" #TODO: STEP 11
+      "roles/iam.serviceAccountTokenCreator":
+        - "serviceAccount:sa-drive-transfer-service-tf@dmo-test-higashi.iam.gserviceaccount.com" #TODO: STEP 4
+    project_iam:
+      "dmo-test-higashi": #TODO: STEP 4
+        - "roles/compute.viewer"
+        - "roles/cloudbuild.builds.builder"
+        - "roles/cloudbuild.workerPoolUser"
+        - "roles/secretmanager.admin"
+        - "roles/secretmanager.secretAccessor"
+        - "roles/vpcaccess.user"
+        - "roles/storage.admin"
+        - "roles/appengine.appAdmin"
+    storage_iam:
+      "bkt-dts-dmo-dts-dmo-cb-logs": #TODO: STEP 4
+        - "roles/storage.admin"
+      "bkt-dts-dmo-dts-dmo-cb-artifacts": #TODO: STEP 4
+        - "roles/storage.admin"
+  "container-builder":
+    prefix: "cb"
+    sa_iam:
+      "roles/iam.serviceAccountUser":
+        - "serviceAccount:sa-drive-transfer-service-tf@dmo-test-higashi.iam.gserviceaccount.com" #TODO: STEP 4
+        - "group:allAdmins@derekmoliver.altostrat.com" #TODO: STEP 4
+        # - "serviceAccount:service-48703874495@gcp-sa-sourcemanager.iam.gserviceaccount.com" #TODO: STEP 11
+      "roles/iam.serviceAccountTokenCreator":
+        - "serviceAccount:sa-drive-transfer-service-tf@dmo-test-higashi.iam.gserviceaccount.com" #TODO: STEP 4
+    project_iam:
+      "dmo-test-higashi": #TODO: STEP 4
+        - "roles/cloudbuild.builds.builder"
+        - "roles/cloudbuild.workerPoolUser"
+        - "roles/secretmanager.admin"
+        - "roles/secretmanager.secretAccessor"
+        - "roles/storage.admin"
+    storage_iam:
+      "bkt-dts-dmo-dts-dmo-cb-logs": #TODO: STEP 4
+        - "roles/storage.admin"
+      "bkt-dts-dmo-dts-dmo-cb-artifacts": #TODO: STEP 4
+        - "roles/storage.admin"
+  "drive-transfer-service-cd":
+    prefix: "sa"
+    sa_iam:
+      "roles/iam.serviceAccountUser":
+        - "serviceAccount:cb-drive-transfer-service-api@dmo-test-higashi.iam.gserviceaccount.com" #TODO: STEP 4
+      "roles/iam.serviceAccountTokenCreator":
+        - "serviceAccount:cb-drive-transfer-service-api@dmo-test-higashi.iam.gserviceaccount.com" #TODO: STEP 4
+    project_iam:
+      "dmo-test-higashi": #TODO: STEP 4
+        - "roles/clouddeploy.jobRunner"
+        - "roles/run.admin"
+    storage_iam: {}
+  "app-dts-dmo-ui":
+    prefix: "sa"
+    sa_iam:
+      "roles/iam.serviceAccountUser":
+        - "serviceAccount:sa-drive-transfer-service-tf@dmo-test-higashi.iam.gserviceaccount.com" #TODO: STEP 4
+        - "serviceAccount:cb-drive-transfer-service-ui@dmo-test-higashi.iam.gserviceaccount.com" #TODO: STEP 4
+    project_iam:
+      "dmo-test-higashi": #TODO: STEP 4
+        - "roles/datastore.user"
+        - "roles/storage.admin"
+    storage_iam: {}
+  "run-dts-dmo-api":
+    prefix: "sa"
+    sa_iam:
+      "roles/iam.serviceAccountUser":
+        - "serviceAccount:sa-drive-transfer-service-tf@dmo-test-higashi.iam.gserviceaccount.com" #TODO: STEP 4
+        - "serviceAccount:sa-drive-transfer-service-cd@dmo-test-higashi.iam.gserviceaccount.com" #TODO: STEP 4
+      "roles/iam.serviceAccountTokenCreator":
+        - "serviceAccount:sa-run-dts-dmo-api@dmo-test-higashi.iam.gserviceaccount.com" #TODO: STEP 4
+    project_iam:
+      "dmo-test-higashi": #TODO: STEP 4
+        - "roles/datastore.user"
+        - "roles/logging.logWriter"
+        - "roles/serviceusage.serviceUsageConsumer"
+        - "roles/storage.admin"
+        - "roles/workflows.invoker"
+    storage_iam: {}
+  "workflow-dts-dmo-api":
+    prefix: "sa"
+    sa_iam:
+      "roles/iam.serviceAccountUser":
+        - "serviceAccount:sa-run-dts-dmo-api@dmo-test-higashi.iam.gserviceaccount.com" #TODO: STEP 4
+        - "serviceAccount:sa-drive-transfer-service-tf@dmo-test-higashi.iam.gserviceaccount.com" #TODO: STEP 4
+    project_iam:
+      "dmo-test-higashi": #TODO: STEP 4
+        - "roles/datastore.user"
+        - "roles/container.admin"
+    storage_iam: {}
+  "rclone-admin-transfers":
+    prefix: "sa"
+    sa_iam: {}
+    project_iam:
+      "dmo-test-higashi": #TODO: STEP 4
+        - "roles/monitoring.metricWriter"
+        - "roles/storage.admin"
+    storage_iam: {}

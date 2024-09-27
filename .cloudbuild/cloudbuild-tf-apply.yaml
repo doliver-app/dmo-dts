@@ -1,0 +1,69 @@
+logsBucket: "gs://${_CB_LOGS_BUCKET}/tf/${_ENVIRONMENT}/apply"
+options:
+  logStreamingOption: "STREAM_ON"
+  logging: "GCS_ONLY"
+  machineType: "E2_HIGHCPU_32"
+artifacts:
+  objects:
+    location: "gs://${_CB_ARTIFACTS_BUCKET}/tf/${_ENVIRONMENT}/$BUILD_ID"
+    paths: ["/workspace/${_REPO_DIR}/environments/${_ENVIRONMENT}/*.plan"]
+serviceAccount: "sa-drive-transfer-service-tf@$PROJECT_ID.iam.gserviceaccount.com"
+timeout: "1200s"
+
+steps:
+- id: tf-init
+  name: ${_REGION}-docker.pkg.dev/${_AR_PROJECT_ID}/${_AR_REGISTRY_NAME}/${_IMAGE}:${_TERRAFORM_VERSION}
+  dir: ${_REPO_DIR}/environments/${_ENVIRONMENT}
+  entrypoint: sh
+  args:
+  - "-xe"
+  - "-c"
+  - |
+    echo ""
+    echo "*************** TERRAFORM INIT ******************"
+    echo "******* At environment: ${_ENVIRONMENT} *********"
+    echo "*************************************************"
+    terraform init || exit 1
+
+- id: tf-validate
+  name: ${_REGION}-docker.pkg.dev/${_AR_PROJECT_ID}/${_AR_REGISTRY_NAME}/${_IMAGE}:${_TERRAFORM_VERSION}
+  dir: ${_REPO_DIR}/environments/${_ENVIRONMENT}
+  entrypoint: sh
+  args:
+  - "-xe"
+  - "-c"
+  - |
+    echo ""
+    echo "*************** TERRAFORM VALIDATE ******************"
+    echo "******* At environment: ${_ENVIRONMENT} *********"
+    echo "*************************************************"
+    terraform validate || exit 1
+
+- id: tf-plan
+  name: ${_REGION}-docker.pkg.dev/${_AR_PROJECT_ID}/${_AR_REGISTRY_NAME}/${_IMAGE}:${_TERRAFORM_VERSION}
+  dir: ${_REPO_DIR}/environments/${_ENVIRONMENT}
+  entrypoint: sh
+  args:
+  - "-xe"
+  - "-c"
+  - |
+    echo ""
+    echo "*************** TERRAFORM PLAN ******************"
+    echo "******* At environment: ${_ENVIRONMENT} *********"
+    echo "*************************************************"
+    terraform plan -input=false -out="/workspace/${_REPO_DIR}/environments/${_ENVIRONMENT}/${BUILD_ID}_tfplan.plan" || exit 1
+
+- id: tf-apply
+  name: ${_REGION}-docker.pkg.dev/${_AR_PROJECT_ID}/${_AR_REGISTRY_NAME}/${_IMAGE}:${_TERRAFORM_VERSION}
+  dir: ${_REPO_DIR}/environments/${_ENVIRONMENT}
+  entrypoint: sh
+  args:
+  - "-xe"
+  - "-c"
+  - |
+    echo ""
+    echo "*************** TERRAFORM APPLY ******************"
+    echo "******* At environment: ${_ENVIRONMENT} *********"
+    echo "*************************************************"
+    terraform apply -auto-approve -input=false "/workspace/${_REPO_DIR}/environments/${_ENVIRONMENT}/${BUILD_ID}_tfplan.plan" || exit 1
+

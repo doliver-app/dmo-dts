@@ -1,0 +1,807 @@
+# * Copyright 2024 Google LLC
+# *
+# * Licensed under the Apache License, Version 2.0 (the "License");
+# * you may not use this file except in compliance with the License.
+# * You may obtain a copy of the License at
+# *
+# *      http://www.apache.org/licenses/LICENSE-2.0
+# *
+# * Unless required by applicable law or agreed to in writing, software
+# * distributed under the License is distributed on an "AS IS" BASIS,
+# * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# * See the License for the specific language governing permissions and
+# * limitations under the License.
+
+main:
+  params: [input]
+  steps:
+    - assignJobInputVars:
+        assign:
+          - common:
+              projectId: ${sys.get_env("GOOGLE_CLOUD_PROJECT_ID")}
+              environment: ${input.environment}
+              userId: ${input.user_id}
+              userType: ${input.user_type}
+              jobId: ${input.job_id}
+              jobType: ${input.job_type}
+              srcConfigRef: ${input.src_config_ref}
+              dstConfigRef: ${input.dst_config_ref}
+              hasChildren: ${input.has_children}
+              notifyUsers: ${input.notify_users}
+    - assignJobMonitoringVars:
+        assign:
+          - firestore:
+              jobCollection: "jobs"
+              configCollection: "configs"
+    - assignDefaultFirestoreConfigVars:
+        assign:
+          - jobConfig: {}
+          - srcConfig: {}
+          - dstConfig: {}
+          - jobChildConfigs: {}
+          - srcChildConfigs: {}
+    - getFirestoreConfigs:
+        parallel:
+          shared: [jobConfig, srcConfig, dstConfig, jobChildConfigs, srcChildConfigs]
+          branches:
+            - getJob:
+                steps:
+                  - getJobDocumentFirestore:
+                      call: googleapis.firestore.v1.projects.databases.documents.get
+                      args:
+                        name: ${"projects/" + common.projectId + "/databases/dts-dmo-" + common.environment + "/documents/" + firestore.jobCollection + "/" + common.jobId}
+                      result: jobConfig
+                  - checkJobChildren:
+                      switch:
+                        - condition: ${common.hasChildren == true}
+                          steps:
+                            - getJobChildrenConfigDocuments:
+                                call: googleapis.firestore.v1.projects.databases.documents.list
+                                args:
+                                  collectionId: "children"
+                                  parent: ${"projects/" + common.projectId + "/databases/dts-dmo-" + common.environment + "/documents/" + firestore.jobCollection + "/" + common.jobId}
+                                result: jobChildConfigResults
+                            - createJobChildrenConfigMap:
+                                for: 
+                                  value: jobChildDocument
+                                  in: ${jobChildConfigResults.documents}
+                                  steps:
+                                    - createJobChildConfigItem:
+                                        assign:
+                                          - jobChildId: ${text.split(jobChildDocument.name, "/")[8]}
+                                          - jobChildConfigs[jobChildId]: ${jobChildDocument}
+                      next: continue
+            - getSrc:
+                steps:
+                  - getSrcDocumentFirestore:
+                      call: googleapis.firestore.v1.projects.databases.documents.get
+                      args:
+                        name: ${"projects/" + common.projectId + "/databases/dts-dmo-" + common.environment + "/documents/" + common.srcConfigRef}
+                      result: srcConfig
+                  - checkSrcChildren:
+                      switch:
+                        - condition: ${common.hasChildren == true}
+                          steps:
+                            - getSrcChildrenConfigDocuments:
+                                call: googleapis.firestore.v1.projects.databases.documents.list
+                                args:
+                                  collectionId: "children"
+                                  parent: ${"projects/" + common.projectId + "/databases/dts-dmo-" + common.environment + "/documents/" + common.srcConfigRef}
+                                result: srcChildConfigResults
+                            - createSrcChildConfigMap:
+                                for: 
+                                  value: srcChildDocument
+                                  in: ${srcChildConfigResults.documents}
+                                  steps:
+                                    - createSrcChildConfigItem:
+                                        assign:
+                                          - srcChildId: ${text.split(srcChildDocument.name, "/")[8]}
+                                          - srcChildConfigs[srcChildId]: ${srcChildDocument}
+            - getDst:
+                steps:
+                  - getDstDocumentFirestore:
+                      call: googleapis.firestore.v1.projects.databases.documents.get
+                      args:
+                        name: ${"projects/" + common.projectId + "/databases/dts-dmo-" + common.environment + "/documents/" + common.dstConfigRef}
+                      result: dstConfig
+    - assignConfigVars:
+        assign:
+          - config:
+              srcType: ${srcConfig.fields.storage_type.stringValue}
+              srcDetails: ${srcConfig.fields.config.mapValue}
+              srcCommand: ${srcConfig.fields.command.mapValue}
+              dstType: ${dstConfig.fields.storage_type.stringValue}
+              dstDetails: ${dstConfig.fields.config.mapValue}
+              dstCommand: ${dstConfig.fields.command.mapValue}
+    - assignDefaultArgListVars:
+        assign:
+          - arg:
+              srcArg: "drive:"
+              dstArg: "gcs:"
+              driveArgs: []
+              gcsArgs: []
+              dedupeArgList: ["dedupe", "--dedupe-mode=rename"]
+              rootArgList: []
+              jobArgList: ["--gcs-bucket-policy-only"]
+    - assignDstArgVars:
+        steps:
+          - assignGcsBucketPrefixVars:
+              assign:
+                - destinationGcsBucket: ${config.dstCommand.fields.bucket.stringValue}
+                - destinationGcsPrefix: ${default(map.get(config.dstCommand, ["fields", "prefix", "stringValue"]), "")}    
+          - checkDestinationBucketPrefix:
+              switch:
+                - condition: ${destinationGcsPrefix == ""}
+                  steps:
+                    - addDestinationGcsBucketArg:
+                        assign:
+                          - arg.dstArg: ${arg.dstArg + destinationGcsBucket}
+                - condition: ${destinationGcsPrefix != ""}
+                  steps:
+                    - addDestinationGcsPrefixArg:
+                        assign:
+                          - arg.dstArg: ${arg.dstArg + destinationGcsBucket + "/" + destinationGcsPrefix}
+              next: submitJobs
+    - submitJobs:
+        steps:
+          - assignJobResultsVars:
+              assign:
+                - jobResults: {}
+          - submitSharedDriveRcloneJob:
+              call: submitRcloneJob
+              args:
+                common: ${common}
+                firestore: ${firestore}
+                jobConfig: ${jobConfig}
+                jobChildConfigs: ${jobChildConfigs}
+                srcChildConfigs: ${srcChildConfigs}
+                config: ${config}
+                arg: ${arg}
+                configPath: ${common.jobId}
+              result: rcloneJobResult
+          - setJobResultsVars:
+              assign:
+                - jobResults: ${rcloneJobResult}
+    - jobEnd:
+        return: ${jobResults}
+
+submitRcloneJob:
+  params:
+    [common, firestore, jobConfig, jobChildConfigs, srcChildConfigs, config, arg, configPath]
+  steps:
+    - assignKueueClusterVars:
+        assign:
+          - clusterLocation: ${sys.get_env("CLUSTER_LOCATION")}
+          - clusterId: ${sys.get_env("CLUSTER_NAME")}
+          - clusterFullName: ${"projects/" + common.projectId + "/locations/" + clusterLocation + "/clusters/" + clusterId}
+          - clusterNamespace: ${"dts-dmo-" + common.userType}
+    - assignJobManifestVars:
+        assign:
+          - dedupeJobMetadata:
+              namespace: ${"dts-dmo-" + common.userType}
+              generateName: ${"rclone-" + common.userType + "-dedupe-" + text.to_lower(text.replace_all(common.jobId, "/", "-")) + "-"}
+              labels:
+                "kueue.x-k8s.io/queue-name": ${"dts-dmo-" + common.userType + "-lq"}
+                job-id: ${text.replace_all(common.jobId, "/", "-")}
+                job-type: "dedupe"
+          - rootJobMetadata:
+              namespace: ${"dts-dmo-" + common.userType}
+              generateName: ${"rclone-" + common.userType + "-" + common.jobType + "-root-" + text.to_lower(text.replace_all(common.jobId, "/", "-")) + "-"}
+              labels:
+                "kueue.x-k8s.io/queue-name": ${"dts-dmo-" + common.userType + "-lq"}
+                job-id: ${text.replace_all(common.jobId, "/", "-")}
+                job-type: "root"
+          - jobTemplateMetadata:
+              annotations:
+                "gke-gcsfuse/volumes": "true"
+          - gcsFuseContainer:
+              image: ${sys.get_env("AR_REGION") + "-docker.pkg.dev/" + sys.get_env("GOOGLE_CLOUD_PROJECT_ID") + "/" + sys.get_env("AR_REPO") + "/gcs-fuse-csi-driver-sidecar-mounter:latest"}
+              name: "gke-gcsfuse-sidecar"
+          - rcloneServiceAccountKeyVolume:
+              name: "rclone-transfers-sa"
+              csi:
+                driver: "secrets-store-gke.csi.k8s.io"
+                readOnly: true
+                volumeAttributes:
+                  "secretProviderClass": ${"sa-rclone-" + common.userType + "-transfers-key"} 
+          - rcloneServiceAccountKeyVolumeMount:
+              mountPath: "/var/secrets"
+              name: "rclone-transfers-sa"
+          - rcloneConfigVolume:
+              name: "gcs-fuse-csi-ephemeral"
+              csi:
+                driver: "gcsfuse.csi.storage.gke.io"
+                volumeAttributes:
+                  "bucketName": ${sys.get_env("CONFIG_BUCKET")}
+                  "mountOptions": ${"only-dir=" + configPath}
+                  "gcsfuseLoggingSeverity": "warning"
+          - rcloneConfigVolumeMount:
+              mountPath: "/config/rclone"
+              name: "gcs-fuse-csi-ephemeral"
+          - dedupeJobManifest: {}
+          - jobManifests: {}
+    - createJobManifests:
+        parallel:
+          shared: [arg, dedupeJobManifest, jobManifests]
+          branches:
+            - createDedupeJobManifest:
+                steps:
+                  - addDedupeJobArgs:
+                      assign:
+                        - arg.dedupeArgList: ${list.concat(arg.dedupeArgList, arg.srcArg)}
+                        - arg.dedupeArgList: ${list.concat(arg.dedupeArgList, "--use-json-log")}
+                        - arg.dedupeArgList: ${list.concat(arg.dedupeArgList, "-vv")}
+                  - populateDedupeJobManifest:
+                      assign:
+                        - dedupeJobManifest:
+                            apiVersion: "batch/v1"
+                            kind: "Job"
+                            metadata: ${dedupeJobMetadata}
+                            spec:
+                              parallelism: 1
+                              completions: 1
+                              suspend: true
+                              ttlSecondsAfterFinished: 300
+                              template:
+                                metadata: ${jobTemplateMetadata}
+                                spec:
+                                  serviceAccountName: ${"sa-rclone-" + common.userType + "-transfers"}
+                                  containers:
+                                    - ${gcsFuseContainer}
+                                    - image: "rclone/rclone"
+                                      imagePullPolicy: "IfNotPresent"
+                                      name: ${"rclone-" + common.userType + "-dedupe"}
+                                      args: ${arg.dedupeArgList}
+                                      resources:
+                                        requests:
+                                          cpu: ${sys.get_env("DEDUPE_JOB_CPU")}
+                                          memory: ${sys.get_env("DEDUPE_JOB_MEMORY")}
+                                      volumeMounts:
+                                        - ${rcloneServiceAccountKeyVolumeMount}
+                                        - ${rcloneConfigVolumeMount}
+                                  volumes:
+                                    - ${rcloneServiceAccountKeyVolume}
+                                    - ${rcloneConfigVolume}
+                                  restartPolicy: "Never"           
+            - createRootManifest:
+                steps:
+                  - addRootJobArgs:
+                      assign:
+                        - arg.rootArgList: ${arg.jobArgList}
+                        - arg.rootArgList: ${list.prepend(arg.rootArgList, arg.dstArg)}
+                        - arg.rootArgList: ${list.prepend(arg.rootArgList, arg.srcArg)}
+                        - arg.rootArgList: ${list.prepend(arg.rootArgList, common.jobType)}
+                        - arg.rootArgList: ${list.concat(arg.rootArgList, "--transfers=" + sys.get_env("RCLONE_TRANSFERS"))}
+                        - arg.rootArgList: ${list.concat(arg.rootArgList, "--checkers=" + sys.get_env("RCLONE_CHECKERS"))}
+                        - arg.rootArgList: ${list.concat(arg.rootArgList, "--fast-list")}
+                        - arg.rootArgList: ${list.concat(arg.rootArgList, "--buffer-size=" + sys.get_env("RCLONE_BUFFER_SIZE"))}
+                        - arg.rootArgList: ${list.concat(arg.rootArgList, "--drive-chunk-size=" + sys.get_env("RCLONE_DRIVE_CHUNK_SIZE"))}
+                        - arg.rootArgList: ${list.concat(arg.rootArgList, "--create-empty-src-dirs")}
+                        - arg.rootArgList: ${list.concat(arg.rootArgList, "--drive-export-formats=docx,xlsx,pptx,svg,json,link.html")}
+                        - arg.rootArgList: ${list.concat(arg.rootArgList, "--metadata")}
+                        - arg.rootArgList: ${list.concat(arg.rootArgList, "--use-json-log")}
+                        - arg.rootArgList: ${list.concat(arg.rootArgList, "-vv")}
+                  - checkIfExclusionFiltersNeeded:
+                      switch:
+                        - condition: ${common.hasChildren == true}
+                          steps:
+                            - addExclusionFilterArgs:
+                                assign:
+                                  - arg.rootArgList: ${list.concat(arg.rootArgList, "--exclude-from")}
+                                  - arg.rootArgList: ${list.concat(arg.rootArgList, "/config/rclone/subfolders.txt")}
+                  - populateRootJobManifest:
+                      assign:
+                        - rootJobManifest:
+                            apiVersion: "batch/v1"
+                            kind: "Job"
+                            metadata: ${rootJobMetadata}
+                            spec:
+                              parallelism: 1
+                              completions: 1
+                              suspend: true
+                              ttlSecondsAfterFinished: 600
+                              template:
+                                metadata: ${jobTemplateMetadata}
+                                spec:
+                                  serviceAccountName: ${"sa-rclone-" + common.userType + "-transfers"}
+                                  containers:
+                                    - ${gcsFuseContainer}
+                                    - image: "rclone/rclone"
+                                      imagePullPolicy: "IfNotPresent"
+                                      name: ${"rclone-" + common.userType + "-" + common.jobType}
+                                      args: ${arg.rootArgList}
+                                      resources:
+                                        requests:
+                                          cpu: ${sys.get_env("TRANSFER_JOB_CPU")}
+                                          memory: ${sys.get_env("TRANSFER_JOB_MEMORY")}
+                                      volumeMounts:
+                                        - ${rcloneServiceAccountKeyVolumeMount}
+                                        - ${rcloneConfigVolumeMount}
+                                  volumes:
+                                    - ${rcloneServiceAccountKeyVolume}
+                                    - ${rcloneConfigVolume}
+                                  restartPolicy: "Never"
+                  - addRootJobToJobManifests:
+                      assign:
+                        - jobManifests[common.jobId]:
+                            manifestType: "root"
+                            manifest: ${rootJobManifest}
+            - createChildrenJobs:
+                steps:
+                  - checkIfChildrenJobsNeeded:
+                      switch:
+                        - condition: ${common.hasChildren == true}
+                          steps:
+                            - generateManifestForEachChildJob:
+                                for:
+                                  value: srcChildId
+                                  index: idx
+                                  in: ${keys(srcChildConfigs)}
+                                  steps:
+                                    - assignChildJobVars:
+                                        assign:
+                                          - childJobId: ${srcChildId}
+                                          - childJob: ${srcChildConfigs[srcChildId]}
+                                          - childSrcCommand: ${childJob.fields.command.mapValue}
+                                          - childFolderName: ${default(map.get(childSrcCommand, ["fields", "folder_name", "stringValue"]), "")}
+                                          - childSrcArg: ${arg.srcArg + childFolderName}
+                                          - childDstArg: ${arg.dstArg + "/" + childFolderName}
+                                    - addChildJobArgs:
+                                        assign:
+                                          - childArgList: ${arg.jobArgList}
+                                          - childArgList: ${list.prepend(childArgList, childDstArg)}
+                                          - childArgList: ${list.prepend(childArgList, childSrcArg)}
+                                          - childArgList: ${list.prepend(childArgList, common.jobType)}
+                                          - childArgList: ${list.concat(childArgList, "--transfers=" + sys.get_env("RCLONE_TRANSFERS"))}
+                                          - childArgList: ${list.concat(childArgList, "--checkers=" + sys.get_env("RCLONE_CHECKERS"))}
+                                          - childArgList: ${list.concat(childArgList, "--fast-list")}
+                                          - childArgList: ${list.concat(childArgList, "--buffer-size=" + sys.get_env("RCLONE_BUFFER_SIZE"))}
+                                          - childArgList: ${list.concat(childArgList, "--drive-chunk-size=" + sys.get_env("RCLONE_DRIVE_CHUNK_SIZE"))}
+                                          - childArgList: ${list.concat(childArgList, "--create-empty-src-dirs")}
+                                          - childArgList: ${list.concat(childArgList, "--drive-export-formats=docx,xlsx,pptx,svg,json,link.html")}
+                                          - childArgList: ${list.concat(childArgList, "--metadata")}
+                                          - childArgList: ${list.concat(childArgList, "--use-json-log")}
+                                          - childArgList: ${list.concat(childArgList, "-vv")}
+                                    - getChildFolderNameLabel:
+                                        assign:
+                                          - leadTrailWhitespace: ${text.replace_all_regex(childFolderName, "^\\[\\s\\]\\+\\|\\[\\s\\]\\+$", "")}
+                                          - lowercase: ${text.to_lower(leadTrailWhitespace)}
+                                          - multiWhitespace: ${text.replace_all_regex(lowercase, " \\{2,\\}", " ")}
+                                          - hyphenSpaces: ${text.replace_all(multiWhitespace, " ", "-")}
+                                          - childFolderNameLabel: ${text.replace_all_regex(hyphenSpaces, "\\[^-A-Za-z0-9_\\.\\]\\+", "")}
+                                    - assignChildJobManifestVars:
+                                        assign:
+                                          - childJobMetadata:
+                                              namespace: ${"dts-dmo-" + common.userType}
+                                              generateName: ${"rclone-" + common.userType + "-" + common.jobType + "-child-" + idx + "-" + text.to_lower(common.jobId) + "-"}
+                                              labels:
+                                                "kueue.x-k8s.io/queue-name": ${"dts-dmo-" + common.userType + "-lq"}
+                                                root-job-id: ${common.jobId}
+                                                job-id: ${childJobId}
+                                                job-type: "child"
+                                                child-index: ${string(idx)}
+                                                child-subfolder: ${childFolderNameLabel}
+                                    - populateChildJobManifest:
+                                        assign:
+                                          - childJobManifest:
+                                              apiVersion: "batch/v1"
+                                              kind: "Job"
+                                              metadata: ${childJobMetadata}
+                                              spec:
+                                                parallelism: 1
+                                                completions: 1
+                                                suspend: true
+                                                ttlSecondsAfterFinished: 600
+                                                template:
+                                                  metadata: ${jobTemplateMetadata}
+                                                  spec:
+                                                    serviceAccountName: ${"sa-rclone-" + common.userType + "-transfers"}
+                                                    containers:
+                                                      - ${gcsFuseContainer}
+                                                      - image: "rclone/rclone"
+                                                        imagePullPolicy: "IfNotPresent"
+                                                        name: ${"rclone-" + common.userType + "-" + common.jobType + "-child-" + idx}
+                                                        args: ${childArgList}
+                                                        resources:
+                                                          requests:
+                                                            cpu: ${sys.get_env("TRANSFER_JOB_CPU")}
+                                                            memory: ${sys.get_env("TRANSFER_JOB_MEMORY")}
+                                                        volumeMounts:
+                                                          - ${rcloneServiceAccountKeyVolumeMount}
+                                                          - ${rcloneConfigVolumeMount}
+                                                    volumes:
+                                                      - ${rcloneServiceAccountKeyVolume}
+                                                      - ${rcloneConfigVolume}
+                                                    restartPolicy: "Never"
+                                    - addChildJobToJobManifests:
+                                        assign:
+                                          - jobManifests[childJobId]:
+                                              manifestType: "child"
+                                              manifest: ${childJobManifest}
+    - submitDedupeJobToCluster:
+        steps:
+          - assignDedupeJobResultVars:
+              assign:
+                - dedupeJobResult: {}
+          - assertKueueClusterRunningForDedupe:
+              call: assertClusterStatus
+              args:
+                expectedStatus: "RUNNING"
+                clusterFullName: ${clusterFullName}
+          - createDedupeJob:
+              call: gke.create_job
+              args:
+                cluster_id: ${clusterId}
+                location: ${clusterLocation}
+                project: ${common.projectId}
+                namespace: ${clusterNamespace}
+                job: ${dedupeJobManifest}
+              result: dedupeJobResult
+          - waitForDedupeJob:
+              call: gke.await_job
+              args:
+                cluster_id: ${clusterId}
+                job_name: ${dedupeJobResult.metadata.name}
+                location: ${clusterLocation}
+                project: ${common.projectId}
+                namespace: ${clusterNamespace}
+                timeout: 3600 # 1 hour
+              result: dedupeJobResult
+          - checkDedupeJobStatus:
+              steps:
+                - assignDedupeJobStatusVars:
+                    assign:
+                      - dedupeJobStatus: ${default(map.get(dedupeJobResult, "status"), null)}
+                      - dedupeJobStatusConditions: ${default(map.get(dedupeJobStatus, "conditions"), null)}
+                      - dedupeJobErrorTags: ${default(map.get(dedupeJobResult, "tags"), null)}
+                      - dedupeJobErrorMessage: ${default(map.get(dedupeJobResult, "message"), "")}
+                - checkDedupeJobErrorResult:
+                    switch:
+                      - condition: ${dedupeJobErrorTags != null}
+                        steps:
+                          - checkDedupeJobFailedJob:
+                              switch:
+                                - condition: ${"FailedJobError" in dedupeJobErrorTags}
+                                  steps:
+                                    # SET_STATUS_ERROR
+                                    - createStatusUpdatesDedupeError:
+                                        assign:
+                                          - statusUpdatesDedupeError:
+                                              status:
+                                                type: stringValue
+                                                value: "error"
+                                              status_updated:
+                                                type: timestampValue
+                                                value: ${time.format(sys.now())}
+                                              job_completed:
+                                                type: timestampValue
+                                                value: ${time.format(sys.now())}
+                                              job_error:
+                                                type: stringValue
+                                                value: ${dedupeJobErrorMessage}
+                                    - setJobStatusDedupeError:
+                                        call: setJobStatus
+                                        args:
+                                          jobConfig: ${jobConfig}
+                                          jobConfigPath: ${"projects/" + common.projectId + "/databases/dts-dmo-" + common.environment + "/documents/" + firestore.jobCollection + "/" + common.jobId}
+                                          statusUpdates: ${statusUpdatesDedupeError}
+                                        result: jobConfig
+                              next: checkDedupeJobStatusComplete
+                    next: checkDedupeJobStatusComplete
+                - checkDedupeJobStatusComplete:
+                    switch:
+                      - condition: ${dedupeJobStatusConditions != null}
+                        steps:
+                          - checkDedupeJobStatusConditions:
+                              for:
+                                value: dedupeJobCondition
+                                in: ${dedupeJobStatusConditions}
+                                steps:
+                                  - checkDedupeJobStatusConditionType:
+                                      switch:
+                                        - condition: ${dedupeJobCondition.type == "Complete"}
+                                          next: break
+                    next: submitJobsToCluster
+    - submitJobsToCluster:
+        switch:
+          - condition: ${len(jobManifests) > 0}
+            steps:
+              - assignJobResultVars:
+                  assign:
+                    - jobCompletes: {}
+                    - jobErrors: {}
+              - assertKueueClusterRunningForJobs:
+                  call: assertClusterStatus
+                  args:
+                    expectedStatus: "RUNNING"
+                    clusterFullName: ${clusterFullName}
+              - createJobsOnCluster:
+                  parallel:
+                    shared: [jobCompletes, jobErrors, jobConfig, jobChildConfigs]
+                    for:
+                      value: jobManifestId
+                      in: ${keys(jobManifests)}
+                      steps:
+                        # SET_STATUS_RUNNING
+                        - setStatusJobRunning:
+                            steps:
+                              - createStatusUpdatesJobRunning:
+                                  assign:
+                                    - statusUpdatesJobRunning:
+                                        status:
+                                          type: stringValue
+                                          value: "running"
+                                        status_updated:
+                                          type: timestampValue
+                                          value: ${time.format(sys.now())}
+                                        job_started:
+                                          type: timestampValue
+                                          value: ${time.format(sys.now())}
+                              - checkIfRootOrChildJobRunning:
+                                  switch:
+                                    - condition: ${jobManifests[jobManifestId].manifestType == "child"}
+                                      steps:
+                                        - setChildJobStatusRunning:
+                                            call: setJobStatus
+                                            args:
+                                              jobConfig: ${jobChildConfigs[jobManifestId]}
+                                              jobConfigPath: ${"projects/" + common.projectId + "/databases/dts-dmo-" + common.environment + "/documents/" + firestore.jobCollection + "/" + common.jobId + "/children/" + jobManifestId}
+                                              statusUpdates: ${statusUpdatesJobRunning}
+                                            result: jobChildStatusRunningResult
+                                        - assignChildJobStatusUpdateRunning:
+                                            assign:
+                                              - jobChildConfigs[jobManifestId]: ${jobChildStatusRunningResult}
+                                    - condition: ${jobManifests[jobManifestId].manifestType == "root"}
+                                      steps:
+                                        - setRootJobStatusRunning:
+                                            call: setJobStatus
+                                            args:
+                                              jobConfig: ${jobConfig}
+                                              jobConfigPath: ${"projects/" + common.projectId + "/databases/dts-dmo-" + common.environment + "/documents/" + firestore.jobCollection + "/" + common.jobId}
+                                              statusUpdates: ${statusUpdatesJobRunning}
+                                            result: jobConfig    
+                        - createJob:
+                            call: gke.create_job
+                            args:
+                              cluster_id: ${clusterId}
+                              location: ${clusterLocation}
+                              project: ${common.projectId}
+                              namespace: ${clusterNamespace}
+                              job: ${jobManifests[jobManifestId].manifest}
+                            result: jobResult
+                        - waitForJob:
+                            call: gke.await_job
+                            args:
+                              cluster_id: ${clusterId}
+                              job_name: ${jobResult.metadata.name}
+                              location: ${clusterLocation}
+                              project: ${common.projectId}
+                              namespace: ${clusterNamespace}
+                              timeout: ${int(sys.get_env("JOB_TIMEOUT"))}
+                            result: jobResult
+                        - checkJobStatus:
+                            steps:
+                              - assignJobStatusVars:
+                                  assign:
+                                    - jobStatus: ${default(map.get(jobResult, "status"), null)}
+                                    - jobStatusConditions: ${default(map.get(jobStatus, "conditions"), null)}
+                                    - jobErrorTags: ${default(map.get(jobResult, "tags"), null)}
+                                    - jobErrorMessage: ${default(map.get(jobResult, "message"), "")}
+                              - checkJobErrorResult:
+                                  switch:
+                                    - condition: ${jobErrorTags != null}
+                                      steps:
+                                        - checkJobFailedJob:
+                                            switch:
+                                              - condition: ${"FailedJobError" in jobErrorTags}
+                                                steps:
+                                                  # SET_STATUS_ERROR
+                                                  - setStatusJobError:
+                                                      steps:
+                                                        - createStatusUpdatesJobError:
+                                                            assign:
+                                                              - statusUpdatesJobError:
+                                                                  status:
+                                                                    type: stringValue
+                                                                    value: "error"
+                                                                  status_updated:
+                                                                    type: timestampValue
+                                                                    value: ${time.format(sys.now())}
+                                                                  job_completed:
+                                                                    type: timestampValue
+                                                                    value: ${time.format(sys.now())}
+                                                                  job_error:
+                                                                    type: stringValue
+                                                                    value: ${jobErrorMessage}
+                                                        - checkIfRootOrChildJobError:
+                                                            switch:
+                                                              - condition: ${jobManifests[jobManifestId].manifestType == "child"}
+                                                                steps:
+                                                                  - setChildJobStatusError:
+                                                                      call: setJobStatus
+                                                                      args:
+                                                                        jobConfig: ${jobChildConfigs[jobManifestId]}
+                                                                        jobConfigPath: ${"projects/" + common.projectId + "/databases/dts-dmo-" + common.environment + "/documents/" + firestore.jobCollection + "/" + common.jobId + "/children/" + jobManifestId}
+                                                                        statusUpdates: ${statusUpdatesJobError}
+                                                                      result: jobChildStatusErrorResult
+                                                                  - assignChildJobStatusUpdateError:
+                                                                      assign:
+                                                                        - jobChildConfigs[jobManifestId]: ${jobChildStatusErrorResult}
+                                                              - condition: ${jobManifests[jobManifestId].manifestType == "root"}
+                                                                steps:
+                                                                  - setRootJobStatusError:
+                                                                      call: setJobStatus
+                                                                      args:
+                                                                        jobConfig: ${jobConfig}
+                                                                        jobConfigPath: ${"projects/" + common.projectId + "/databases/dts-dmo-" + common.environment + "/documents/" + firestore.jobCollection + "/" + common.jobId}
+                                                                        statusUpdates: ${statusUpdatesJobError}
+                                                                      result: jobConfig    
+                                                  - trackJobErrors:
+                                                      assign:
+                                                        - jobErrors[jobManifestId]: ${jobStatus}
+                                            next: checkJobStatusComplete
+                                  next: checkJobStatusComplete
+                              - checkJobStatusComplete:
+                                  switch:
+                                    - condition: ${jobStatusConditions != null}
+                                      steps:
+                                        - checkJobStatusConditions:
+                                            for:
+                                              value: jobCondition
+                                              in: ${jobStatusConditions}
+                                              steps:
+                                                - checkJobStatusConditionType:
+                                                    switch:
+                                                      - condition: ${jobCondition.type == "Complete"}
+                                                        steps:
+                                                          - checkIfChildJobComplete:
+                                                              switch:
+                                                                - condition: ${jobManifests[jobManifestId].manifestType == "child"}
+                                                                  steps:
+                                                                    - assignChildJobTimingVars:
+                                                                        assign:
+                                                                          - childJobStartTime: ${default(map.get(jobStatus, "startTime"), null)}
+                                                                          - childJobStartTimeSeconds: ${time.parse(childJobStartTime)}
+                                                                          - childJobCompleteTime: ${default(map.get(jobStatus, "completionTime"), null)}
+                                                                          - childJobCompleteTimeSeconds: ${time.parse(childJobCompleteTime)}
+                                                                          - childJobDurationSeconds: ${childJobCompleteTimeSeconds - childJobStartTimeSeconds}
+                                                                    # SET_STATUS_COMPLETE
+                                                                    - setStatusChildJobComplete:
+                                                                        steps:
+                                                                          - createStatusUpdatesChildJobComplete:
+                                                                              assign:
+                                                                                - statusUpdatesChildJobComplete:
+                                                                                    status:
+                                                                                      type: stringValue
+                                                                                      value: "complete"
+                                                                                    status_updated:
+                                                                                      type: timestampValue
+                                                                                      value: ${time.format(sys.now())}
+                                                                                    job_started:
+                                                                                      type: timestampValue
+                                                                                      value: ${childJobStartTime}
+                                                                                    job_completed:
+                                                                                      type: timestampValue
+                                                                                      value: ${childJobCompleteTime}
+                                                                                    job_duration:
+                                                                                      type: integerValue
+                                                                                      value: ${int(childJobDurationSeconds)}
+                                                                          - setChildJobStatusComplete:
+                                                                              call: setJobStatus
+                                                                              args:
+                                                                                jobConfig: ${jobChildConfigs[jobManifestId]}
+                                                                                jobConfigPath: ${"projects/" + common.projectId + "/databases/dts-dmo-" + common.environment + "/documents/" + firestore.jobCollection + "/" + common.jobId + "/children/" + jobManifestId}
+                                                                                statusUpdates: ${statusUpdatesChildJobComplete}
+                                                                              result: jobChildStatusCompleteResult
+                                                                          - assignChildJobStatusUpdateComplete:
+                                                                              assign:
+                                                                                - jobChildConfigs[jobManifestId]: ${jobChildStatusCompleteResult}
+                                                                - condition: ${jobManifests[jobManifestId].manifestType == "root"}
+                                                                  next: trackJobCompletes
+                                                          - trackJobCompletes:
+                                                              assign:
+                                                                - jobCompletes[jobManifestId]: ${jobStatus}
+                        - checkRootJobCompletion:
+                            switch:
+                              - condition: ${len(jobCompletes) == len(jobManifests)}
+                                steps:
+                                  - assignRootJobTimingVars:
+                                      assign:
+                                        - rootJobStartTimeSeconds: ${time.parse(jobConfig.fields.job_started.timestampValue)}
+                                        - rootJobCompleteTime: ${time.format(sys.now())}
+                                        - rootJobCompleteTimeSeconds: ${time.parse(rootJobCompleteTime)}
+                                        - rootJobDurationSeconds: ${rootJobCompleteTimeSeconds - rootJobStartTimeSeconds}
+                                  - createStatusUpdatesRootJobComplete:
+                                      assign:
+                                        - statusUpdatesRootJobComplete:
+                                            status:
+                                              type: stringValue
+                                              value: "complete"
+                                            status_updated:
+                                              type: timestampValue
+                                              value: ${time.format(sys.now())}
+                                            job_completed:
+                                              type: timestampValue
+                                              value: ${rootJobCompleteTime}
+                                            job_duration:
+                                              type: integerValue
+                                              value: ${int(rootJobDurationSeconds)}
+                                  - setRootJobStatusComplete:
+                                      call: setJobStatus
+                                      args:
+                                        jobConfig: ${jobConfig}
+                                        jobConfigPath: ${"projects/" + common.projectId + "/databases/dts-dmo-" + common.environment + "/documents/" + firestore.jobCollection + "/" + common.jobId}
+                                        statusUpdates: ${statusUpdatesRootJobComplete}
+                                      result: jobConfig
+                              - condition: ${len(jobCompletes) < len(jobManifests)}
+                                next: continue
+                            next: continue
+              - rcloneJobEnd:
+                  return:
+                    "completes": ${jobCompletes}
+                    "errors": ${jobErrors}
+
+setJobStatus:
+  params: [jobConfig, jobConfigPath, statusUpdates]
+  steps:
+    - setStatusFields:
+        for:
+          value: jobField
+          in: ${keys(statusUpdates)} 
+          steps:
+            - assignStatusUpdateFields:
+                assign:
+                  - jobFieldDetails: ${statusUpdates[jobField]}
+                  - jobFieldType: ${jobFieldDetails.type}
+                  - jobFieldValue: ${jobFieldDetails.value}
+                  - jobConfig.fields[jobField]:
+                      ${jobFieldType}: ${jobFieldValue}
+    - updateJobStatus:
+        call: googleapis.firestore.v1.projects.databases.documents.patch
+        args:
+          name: ${jobConfigPath}
+          currentDocument:
+            exists: true
+          updateMask:
+            fieldPaths: ${keys(statusUpdates)}
+          body: ${jobConfig}
+        result: jobConfig
+    - returnUpdatedJobConfig:
+        return: ${jobConfig}
+
+sendStatusNotification:
+  params:
+    [userId, jobId, status, notifyUsers, projectId]
+  steps:
+    - notifyUsers:
+        call: http.post
+        args:
+          url: ${sys.get_env("API_ENDPOINT") + "/workflow/notify"}
+          headers:
+            Content-Type: application/json
+          body:
+            job_id: ${jobId}
+            status: ${status}
+            notify_users: ${list.concat(notifyUsers, userId)}
+            url: ${"https://console.cloud.google.com/workflows/workflow/" + sys.get_env("GOOGLE_CLOUD_LOCATION") + "/shared-rclone-job-workflow/execution/" + sys.get_env("GOOGLE_CLOUD_WORKFLOW_EXECUTION_ID") + "/summary?project=" + projectId}
+          auth:
+            type: OIDC
+        result: notifyResult
+    - notifyResultEnd:
+        return: ${notifyResult}
+
+assertClusterStatus:
+  params:
+    [expectedStatus, clusterFullName]
+  steps:
+    - getCluster:
+        call: googleapis.container.v1.projects.locations.clusters.get
+        args:
+          name: ${clusterFullName}
+        result: cluster
+    - compareStatus:
+        switch:
+          - condition: ${cluster.status == expectedStatus}
+            next: end
+    - fail:
+        raise: ${"Expected Cluster status is " + expectedStatus + ". Received " + cluster.status + " instead."}

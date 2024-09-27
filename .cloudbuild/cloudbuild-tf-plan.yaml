@@ -1,0 +1,50 @@
+logsBucket: "gs://${_CB_LOGS_BUCKET}/tf/${_ENVIRONMENT}/plan"
+options:
+  logStreamingOption: "STREAM_ON"
+  logging: "GCS_ONLY"
+  machineType: "E2_HIGHCPU_32"
+serviceAccount: "sa-drive-transfer-service-tf@$PROJECT_ID.iam.gserviceaccount.com"
+
+steps:
+- id: tf-init
+  name: ${_REGION}-docker.pkg.dev/${_AR_PROJECT_ID}/${_AR_REGISTRY_NAME}/${_IMAGE}:${_TERRAFORM_VERSION}
+  dir: ${_REPO_DIR}/environments/${_ENVIRONMENT}
+  entrypoint: sh
+  args:
+  - "-xe"
+  - "-c"
+  - |
+    echo ""
+    echo "*************** TERRAFORM INIT ******************"
+    echo "******* At environment: ${_ENVIRONMENT} *********"
+    echo "*************************************************"
+    terraform init || exit 1
+
+- id: tf-validate
+  name: ${_REGION}-docker.pkg.dev/${_AR_PROJECT_ID}/${_AR_REGISTRY_NAME}/${_IMAGE}:${_TERRAFORM_VERSION}
+  dir: ${_REPO_DIR}/environments/${_ENVIRONMENT}
+  entrypoint: sh
+  args:
+  - "-xe"
+  - "-c"
+  - |
+    echo ""
+    echo "*************** TERRAFORM VALIDATE ******************"
+    echo "******* At environment: ${_ENVIRONMENT} *********"
+    echo "*************************************************"
+    terraform validate || exit 1
+
+- id: tf-plan
+  name: ${_REGION}-docker.pkg.dev/${_AR_PROJECT_ID}/${_AR_REGISTRY_NAME}/${_IMAGE}:${_TERRAFORM_VERSION}
+  dir: ${_REPO_DIR}/environments/${_ENVIRONMENT}
+  entrypoint: sh
+  args:
+  - "-xe"
+  - "-c"
+  - |
+    echo ""
+    echo "*************** TERRAFORM PLAN ******************"
+    echo "******* At environment: ${_ENVIRONMENT} *********"
+    echo "*************************************************"
+    terraform plan -lock=false -input=false || exit 1
+

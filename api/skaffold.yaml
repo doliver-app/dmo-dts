@@ -1,0 +1,11 @@
+apiVersion: skaffold/v4beta10
+kind: Config
+metadata: 
+  name: drive-transfer-service
+profiles:
+- name: run
+  manifests:
+    rawYaml:
+    - cloud_deploy/manifests/run.yaml
+deploy:
+  cloudrun: {}

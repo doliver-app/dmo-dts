@@ -1,0 +1,16 @@
+{
+    "firestore": {
+      "dbConfig": {
+        "projectId": "dixita-test",
+        "dbName": "non-prod",
+        "configName": "jobs"
+      }
+    },
+    "app": {
+        "api": "https://rclone-as-a-service-api-dev-4c2mtglspq-uc.a.run.app",
+        "port": 8080
+    },
+    "secret": {
+      "clientId": "client_id_local"
+    }
+}

@@ -1,0 +1,15 @@
+logsBucket: "gs://${_CB_LOGS_BUCKET}/ui"
+options:
+  logStreamingOption: "STREAM_ON"
+  logging: "GCS_ONLY"
+  machineType: "E2_HIGHCPU_32"
+serviceAccount: "cb-drive-transfer-service-ui@$PROJECT_ID.iam.gserviceaccount.com"
+
+steps:
+- id: app-deploy
+  name: google/cloud-sdk:slim
+  dir: ${_REPO_DIR}
+  entrypoint: gcloud
+  args:
+  - "app"
+  - "deploy"

@@ -1,0 +1,490 @@
+/** Copyright 2024 Google LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License. */
+ 
+* {
+  box-sizing: border-box;
+}
+
+/* Body */
+body {
+  font-family: "Open Sans";
+  padding: 20px;
+  background: linear-gradient(180deg, #669DF6 0%, #669DF6 57.01%, #4ECDE6 100%);
+  margin: 0;
+  padding: 0;
+}
+
+/* Table Container */
+.content {
+  min-height: 100vh;
+  border-radius: 20px;
+  border: 2px solid #E8F0FE;
+  padding: 20px 20px 20px 20px;
+  justify-content: center;
+  align-items: center;
+  margin-top: 50px;
+}
+
+/* History Table Styling */
+.jobHistoryTable {
+  width: 100%;
+  border-collapse: collapse;
+  background-color: #FFFFFF;
+  height: fit-content;
+}
+
+.jobHistoryTable th,
+.jobHistoryTable tbody {
+  text-align: left;
+  border-bottom: 1px solid #ddd;
+  font-family: "Open Sans";
+}
+
+.jobHistoryTable th {
+  font-weight: bold;
+  color: #343434;
+  font-size: 14px;
+  padding-bottom: 15px;
+  padding-top: 15px;
+}
+
+.jobHistoryTable tbody {
+  color: #7f7e7e;
+  font-size: 14px;
+}
+
+.jobHistoryTable tr:nth-child(even) {
+  background-color: #f9f9f9;
+}
+
+.jobHistoryTable tr:hover {
+  background-color: #e0e0e0;
+}
+
+td {
+  padding-bottom: 10px; 
+  padding-top: 10px; 
+}
+
+ul {
+  list-style-type: none;
+  margin: 0;
+  padding: 0;
+  width: 100%;
+}
+
+li a {
+  font-family: "Open Sans";
+  font-style: none;
+  text-decoration: none;
+  display: block;
+  color: #FFF;
+  padding-bottom: 20px;
+}
+
+.row:after {
+  content: "";
+  display: table;
+  clear: both;
+}
+
+/* Pagination */
+.pagination {
+  text-align: center;
+  margin-top: 20px;
+  font-family: "Open Sans";
+}
+
+.pagination button {
+  padding: 5px 10px;
+  margin: 0 5px;
+  cursor: pointer;
+  border: none;
+}
+
+.hidden {
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  height: 1px;
+  overflow: hidden;
+  position: absolute;
+  white-space: nowrap;
+  width: 1px;
+}
+
+.pagination button.active {
+  background-color: #4285F4;
+  color: white;
+}
+
+.itemsPerPage {
+  font-family: "Open Sans";
+  font-size: 12px;
+}
+
+.itemsPerPageSelect {
+  font-family: "Open Sans";
+  font-size: 12px;
+}
+
+/* Export Request Form */
+form {
+  background-color: #FFFFFF;
+  border-radius: 20px;
+  box-sizing: border-box;
+  padding: 20px;
+  width: 100%;
+  height: fit-content;
+}
+
+.form input, 
+.form select {
+  color: #7f7e7e; 
+}
+
+.form-field,
+.radio-options,
+.input-container,
+.input,
+.cut,
+.placeholder,
+.submit,
+.reset {
+  text-align: left;
+}
+
+.formtitle {
+  color: #5F6368;
+  font-family: "Open Sans";
+  font-size: 25px;
+  font-weight: 400;
+  margin-top: 10px;
+}
+
+.input-container {
+  height: 50px;
+  position: relative;
+  width: 100%;
+}
+
+.ic1 {
+  margin-top: 40px;
+}
+
+.ic2 {
+  margin-top: 30px;
+}
+
+.input {
+  background-color: #FFFFFF;
+  border-radius: 12px;
+  border: 1px solid #E8F0FE;
+  box-sizing: border-box;
+  color: #7f7e7e;
+  height: 100%;
+  outline: 0;
+  padding: 4px 20px 0;
+  width: 100%;
+  font-family: "Open Sans";
+  font-size: 13px;
+}
+
+.cut {
+  border-radius: 10px;
+  height: 20px;
+  left: 20px;
+  position: absolute;
+  top: -20px;
+  transform: translateY(0);
+  transition: transform 200ms;
+}
+
+.cut-short {
+  width: 50px;
+}
+
+.input:focus~.cut,
+.input:not(:placeholder-shown)~.cut {
+  transform: translateY(8px);
+}
+
+.placeholder {
+  color: #6e6e86;
+  background-color: transparent;
+  font-family: "Open Sans";
+  font-size: 13px;
+  left: 20px;
+  line-height: 14px;
+  pointer-events: none;
+  position: absolute;
+  transform-origin: 0 50%;
+  transition: transform 200ms, color 200ms;
+  top: 20px;
+}
+
+.input:focus~.placeholder,
+.input:not(:placeholder-shown)~.placeholder {
+  transform: scale(0.75) translateY(-30px) translateX(-5px);
+  color: #808097;
+  background-color: white;
+  opacity: 1;
+  font-family: "Open Sans";
+  font-size: 16px;
+}
+
+.submit {
+  background-color: #4285F4;
+  font-family: "Open Sans";
+  border-radius: 12px;
+  border: 0;
+  box-sizing: border-box;
+  color: #eee;
+  cursor: pointer;
+  font-size: 13px;
+  height: 50px;
+  margin-top: 38px;
+  text-align: center;
+  width: 150px;
+  align-items: left;
+}
+
+.submit:active {
+  background-color: #06b;
+}
+
+.form-field {
+  color: #7f7e7e;
+  font-family: "Open Sans";
+  font-size: 16px;
+  font-weight: 600;
+  margin-top: 40px;
+  text-align: left;
+  align-items: center;
+  display: inline-block;
+}
+
+.radio-options {
+  color: #65657b;
+  font-family: "Open Sans";
+  font-size: 13px;
+  font-weight: 200;
+  margin-top: 20px;
+}
+
+.required:after {
+  content: " *";
+  color: red;
+}
+
+input[type="radio"] {
+  margin: 0 5px 0 10px;
+}
+
+input[type=text]:focus,
+input[type=number]:focus,
+input[type=email]:focus {
+  box-shadow: 0 0 5px rgba(81, 203, 238, 1);
+  padding: 3px 0px 3px 3px;
+  margin: 5px 1px 3px 0px;
+  border: 1px solid rgba(81, 203, 238, 1);
+}
+
+.numbers {
+  font-family: "Open Sans";
+  font-size: 13px;
+  width: 25px;
+  line-height: 25px;
+  border-radius: 50%;
+  text-align: center;
+  background-color: #4285F4;
+  color: white;
+  margin-right: 10px;
+  display: inline-block;
+}
+
+/* Buttons */
+.button {
+  background-color: #4285F4;
+  font-family: "Open Sans";
+  border-radius: 12px;
+  border: 0;
+  box-sizing: border-box;
+  color: #eee;
+  cursor: pointer;
+  font-size: 13px;
+  height: 50px;
+  margin-top: 38px;
+  width: 150px;
+  justify-content: center;
+  display: flex;
+  align-items: center;
+  position: absolute;
+  top: 20px;
+  right: 50px;
+  margin-left: 10px;
+  text-align: center;
+  text-decoration: none;
+}
+
+.button:active {
+  background-color: #06b;
+}
+
+.reset {
+  background-color: #FFFFFF;
+  font-family: "Open Sans";
+  border-radius: 12px;
+  border: 1px solid #afb3b9;
+  box-sizing: border-box;
+  color: #69A1FF;
+  cursor: pointer;
+  font-size: 13px;
+  height: 50px;
+  margin-top: 38px;
+  margin-left: 20px;
+  text-align: center;
+  width: 150px;
+}
+
+.refresh {
+  background-color: #FFFFFF;
+  font-family: "Open Sans";
+  border-radius: 12px;
+  border: 1px solid #afb3b9;
+  box-sizing: border-box;
+  color: #69A1FF;
+  cursor: pointer;
+  font-size: 13px;
+  height: 50px;
+  margin-top: 38px;
+  text-align: center;
+  width: 150px;
+  position: absolute;
+  top: 20px; 
+  right: 30px;
+}
+
+/* Text */
+.title {
+  color: #5F6368;
+  font-family: "Open Sans";
+  font-size: 30px;
+  font-weight: 600;
+  margin-top: 10px;
+  text-align: left;
+}
+
+.open-sans-google-fonts {
+  font-family: "Open Sans", sans-serif;
+  font-optical-sizing: auto;
+  font-weight: 500;
+  font-style: normal;
+  font-variation-settings: "wdth" 100;
+}
+
+/* Spinner */
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+}
+
+.loading-spinner {
+  position: fixed;
+  z-index: 1051;
+  width: 100%;
+  height: 100%;
+  top: 0px;
+  left: 0px;
+  background-color: rgba(200, 200, 200, 0.8);
+}
+
+.spinner {
+  border: 4px solid #f3f3f3;
+  border-radius: 50%;
+  border-top-color: #3498db;
+  width: 50px;
+  height: 50px;
+  animation: spin 1s linear infinite;
+  top: 50%;
+  left: 50%;
+  position: absolute;
+  transform: translate(-50%, -50%);
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+/* Columns */
+.leftcolumn {
+  float: left;
+  width: 18%;
+  height: auto;
+}
+
+.rightcolumn {
+  float: left;
+  width: 82%;
+  padding-left: 20px;
+  padding-right: 20px;
+  padding-bottom: 20px;
+  height: auto;
+}
+
+.card {
+  background-color: white;
+  padding: 20px;
+  margin-top: 20px;
+  border-radius: 10px;
+}
+
+.card2 {
+  background-color: transparent;
+  padding: 20px;
+  margin-top: 20px;
+  border-radius: 10px;
+}
+
+/* Left Navigation Menu */
+.nav-item {
+  float: left;
+  display: flex;
+  align-items: center;
+  margin-right: 5px;
+}
+
+/* Login */
+.login-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  margin: 0; 
+}
+
+/* Responsive layout - when the screen is less than 800px wide, make the two columns stack on top of each other instead of next to each other */
+@media screen and (max-width: 800px) {
+
+  .leftcolumn,
+  .rightcolumn {
+    width: 100%;
+    padding: 0;
+  }
+}

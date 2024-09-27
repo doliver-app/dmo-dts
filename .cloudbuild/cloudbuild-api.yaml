@@ -1,0 +1,54 @@
+logsBucket: "gs://${_CB_LOGS_BUCKET}/api"
+options:
+  logStreamingOption: "STREAM_ON"
+  logging: "GCS_ONLY"
+  machineType: "E2_HIGHCPU_32"
+serviceAccount: "cb-drive-transfer-service-api@$PROJECT_ID.iam.gserviceaccount.com"
+images:
+- "${_REGION}-docker.pkg.dev/${_AR_PROJECT_ID}/${_AR_REGISTRY_NAME}/${_IMAGE}:$COMMIT_SHA"
+- "${_REGION}-docker.pkg.dev/${_AR_PROJECT_ID}/${_AR_REGISTRY_NAME}/${_IMAGE}:latest"
+
+steps:
+- id: docker-build
+  name: gcr.io/cloud-builders/docker
+  dir: ${_REPO_DIR}
+  entrypoint: sh
+  args:
+  - "-xe"
+  - "-c"
+  - |
+    docker build \
+      --cache-from ${_REGION}-docker.pkg.dev/${_AR_PROJECT_ID}/${_AR_REGISTRY_NAME}/${_IMAGE}:latest \
+      -t=${_REGION}-docker.pkg.dev/${_AR_PROJECT_ID}/${_AR_REGISTRY_NAME}/${_IMAGE}:$COMMIT_SHA \
+      -t=${_REGION}-docker.pkg.dev/${_AR_PROJECT_ID}/${_AR_REGISTRY_NAME}/${_IMAGE}:latest \
+      .
+
+- id: docker-push-sha
+  name: gcr.io/cloud-builders/docker
+  dir: ${_REPO_DIR}
+  args:
+  - "push"
+  - "${_REGION}-docker.pkg.dev/${_AR_PROJECT_ID}/${_AR_REGISTRY_NAME}/${_IMAGE}:$COMMIT_SHA"
+
+- id: docker-push-latest
+  name: gcr.io/cloud-builders/docker
+  dir: ${_REPO_DIR}
+  args:
+  - "push"
+  - "${_REGION}-docker.pkg.dev/${_AR_PROJECT_ID}/${_AR_REGISTRY_NAME}/${_IMAGE}:latest"
+
+- id: cloud-deploy-release
+  name: google/cloud-sdk:slim
+  dir: ${_REPO_DIR}
+  entrypoint: sh
+  args:
+  - "-xe"
+  - "-c"
+  - |
+    gcloud config set deploy/region ${_REGION}
+    gcloud deploy apply --file cloud_deploy/pipeline.yaml
+    gcloud deploy apply --file cloud_deploy/targets.yaml
+    gcloud deploy releases create ${_IMAGE}-$(echo -n $COMMIT_SHA | tail -c 10) \
+      --delivery-pipeline=drive-transfer-service \
+      --skaffold-version=2.11 \
+      --skaffold-file=skaffold.yaml

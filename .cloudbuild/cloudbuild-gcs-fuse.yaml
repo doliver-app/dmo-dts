@@ -1,0 +1,30 @@
+logsBucket: "gs://${_CB_LOGS_BUCKET}/gcs-fuse"
+options:
+  logStreamingOption: "STREAM_ON"
+  logging: "GCS_ONLY"
+  machineType: "E2_HIGHCPU_32"
+serviceAccount: "cb-container-builder@$PROJECT_ID.iam.gserviceaccount.com"
+images:
+- "${_REGION}-docker.pkg.dev/${_AR_PROJECT_ID}/${_AR_REGISTRY_NAME}/${_IMAGE}:latest"
+
+steps:
+- id: docker-pull
+  name: gcr.io/cloud-builders/docker
+  entrypoint: sh
+  args:
+  - "-xe"
+  - "-c"
+  - |
+    docker pull \
+      gcr.io/gke-release/gcs-fuse-csi-driver-sidecar-mounter@sha256:${_GCS_FUSE_VERSION_SHA}
+
+- id: docker-tag
+  name: gcr.io/cloud-builders/docker
+  entrypoint: sh
+  args:
+  - "-xe"
+  - "-c"
+  - |
+    docker tag \
+      gcr.io/gke-release/gcs-fuse-csi-driver-sidecar-mounter@sha256:${_GCS_FUSE_VERSION_SHA} \
+      ${_REGION}-docker.pkg.dev/${_AR_PROJECT_ID}/${_AR_REGISTRY_NAME}/${_IMAGE}:latest

@@ -1,0 +1,21 @@
+logsBucket: "gs://${_CB_LOGS_BUCKET}/terraform-builder"
+options:
+  logStreamingOption: "STREAM_ON"
+  logging: "GCS_ONLY"
+  machineType: "E2_HIGHCPU_32"
+serviceAccount: "cb-container-builder@$PROJECT_ID.iam.gserviceaccount.com"
+images:
+- "${_REGION}-docker.pkg.dev/${_AR_PROJECT_ID}/${_AR_REGISTRY_NAME}/${_IMAGE}:${_TERRAFORM_VERSION}"
+
+steps:
+- id: docker-build
+  name: gcr.io/cloud-builders/docker
+  dir: ${_REPO_DIR}
+  entrypoint: sh
+  args:
+  - "-xe"
+  - "-c"
+  - |
+    docker build \
+      -t=${_REGION}-docker.pkg.dev/${_AR_PROJECT_ID}/${_AR_REGISTRY_NAME}/${_IMAGE}:${_TERRAFORM_VERSION} \
+      .
