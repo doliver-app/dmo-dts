@@ -21,7 +21,7 @@ output "common_config" {
     bootstrap_project_id = module.project.project_id
     tf_service_account   = module.bootstrap_service_accounts["drive-transfer-service-tf"].email
     tf_state_bucket      = module.tf_state_bucket.name
-    # vpc_network          = module.vpc.self_link #TODO: STEP 10
+    vpc_network          = module.vpc.self_link #TODO: STEP 10
   }
 }
 
