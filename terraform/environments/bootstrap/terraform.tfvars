@@ -15,7 +15,7 @@
 billing_account_id = "01C728-C73DD8-AB1248" #TODO: STEP 4
 project_id         = "dmo-test-higashi"         #TODO: STEP 4
 environment        = "dev"        #TODO: STEP 4
-default_region     = "us-central1"     #TODO: STEP 4
+default_region     = "us-west1"     #TODO: STEP 4
 default_prefix     = "dts-dmo"             #TODO: STEP 4
 terraform_sa       = "sa-drive-transfer-service-tf@dmo-test-higashi.iam.gserviceaccount.com" #TODO: STEP 9
 bootstrap_project_services = [
