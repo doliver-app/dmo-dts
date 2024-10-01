@@ -1,16 +1,16 @@
 {
-    "firestore": {
-      "dbConfig": {
-        "projectId": "dixita-test",
-        "dbName": "non-prod",
-        "configName": "jobs"
-      }
-    },
-    "app": {
-        "api": "https://rclone-as-a-service-api-dev-4c2mtglspq-uc.a.run.app",
-        "port": 8080
-    },
-    "secret": {
-      "clientId": "client_id_local"
+  "firestore": {
+    "dbConfig": {
+      "projectId": "dmo-test-higashi",
+      "dbName": "dts-dev",
+      "configName": "jobs"
     }
+  },
+  "app": {
+    "api": "http://127.0.0.1:8081/",
+    "port": 8080
+  },
+  "secret": {
+    "clientId": "rclone-ui-oauth-client-id"
+  }
 }

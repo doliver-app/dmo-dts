@@ -15,12 +15,12 @@
 apiVersion: kueue.x-k8s.io/v1beta1
 kind: ClusterQueue
 metadata:
-  name: dts-dmo-admin-cq
+  name: dts-admin-cq
 spec:
-  cohort: dts-dmo-cohort
+  cohort: dts-cohort
   namespaceSelector:
     matchLabels:
-      kubernetes.io/metadata.name: dts-dmo-admin #Only dts-dmo-admin can submit jobs direclty to this queue, but will be able to share it through the cohort
+      kubernetes.io/metadata.name: dts-admin #Only dts-admin can submit jobs direclty to this queue, but will be able to share it through the cohort
   queueingStrategy: BestEffortFIFO # Default queueing strategy
   resourceGroups:
   - coveredResources: ["cpu", "memory", "ephemeral-storage"]
@@ -37,12 +37,12 @@ spec:
 apiVersion: kueue.x-k8s.io/v1beta1
 kind: ClusterQueue
 metadata:
-  name: dts-dmo-user-cq
+  name: dts-user-cq
 spec:
-  cohort: dts-dmo-cohort
+  cohort: dts-cohort
   namespaceSelector:
     matchLabels:
-      kubernetes.io/metadata.name: dts-dmo-user #Only dts-dmo-user can submit jobs direclty to this queue, but will be able to share it through the cohort
+      kubernetes.io/metadata.name: dts-user #Only dts-user can submit jobs direclty to this queue, but will be able to share it through the cohort
   queueingStrategy: BestEffortFIFO # Default queueing strategy
   resourceGroups:
   - coveredResources: ["cpu", "memory", "ephemeral-storage"]

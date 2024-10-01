@@ -27,7 +27,7 @@ module "tf_state_bucket" {
   source        = "../../modules/gcs"
   project_id    = module.project.project_id
   prefix        = "bkt-${var.default_prefix}"
-  name          = "dts-dmo-tf-state"
+  name          = "dts-tf-state"
   location      = var.default_region
   storage_class = "STANDARD"
   versioning    = true
@@ -38,7 +38,7 @@ module "cb_logs_bucket" {
   source        = "../../modules/gcs"
   project_id    = module.project.project_id
   prefix        = "bkt-${var.default_prefix}"
-  name          = "dts-dmo-cb-logs"
+  name          = "dts-cb-logs"
   location      = var.default_region
   storage_class = "STANDARD"
   versioning    = false
@@ -48,7 +48,7 @@ module "cb_artifacts_bucket" {
   source        = "../../modules/gcs"
   project_id    = module.project.project_id
   prefix        = "bkt-${var.default_prefix}"
-  name          = "dts-dmo-cb-artifacts"
+  name          = "dts-cb-artifacts"
   location      = var.default_region
   storage_class = "STANDARD"
   versioning    = false

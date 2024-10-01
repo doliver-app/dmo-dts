@@ -59,7 +59,7 @@ module "myproject-default-service-accounts" {
 | [iam_project_roles](variables.tf#L93) | Project roles granted to this service account, by project id. | <code>map&#40;list&#40;string&#41;&#41;</code> |  | <code>&#123;&#125;</code> |
 | [iam_sa_roles](variables.tf#L100) | Service account roles granted to this service account, by service account name. | <code>map&#40;list&#40;string&#41;&#41;</code> |  | <code>&#123;&#125;</code> |
 | [iam_storage_roles](variables.tf#L107) | Storage roles granted to this service account, by bucket name. | <code>map&#40;list&#40;string&#41;&#41;</code> |  | <code>&#123;&#125;</code> |
-| dts-dmo(variables.tf#L119) | Prefix applied to service account names. | <code>string</code> |  | <code>null</code> |
+| gts(variables.tf#L119) | Prefix applied to service account names. | <code>string</code> |  | <code>null</code> |
 | [public_keys_directory](variables.tf#L134) | Path to public keys data files to upload to the service account (should have `.pem` extension). | <code>string</code> |  | <code>&#34;&#34;</code> |
 | [service_account_create](variables.tf#L140) | Create service account. When set to false, uses a data source to reference an existing service account. | <code>bool</code> |  | <code>true</code> |
 

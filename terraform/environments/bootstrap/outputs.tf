@@ -27,17 +27,17 @@ output "common_config" {
 
 output "service_accounts" {
   value = {
-    "run-dts-dmo-api" = {
-      email = module.bootstrap_service_accounts["run-dts-dmo-api"].email
-      iam_email = module.bootstrap_service_accounts["run-dts-dmo-api"].iam_email
+    "run-dts-api" = {
+      email = module.bootstrap_service_accounts["run-dts-api"].email
+      iam_email = module.bootstrap_service_accounts["run-dts-api"].iam_email
     }
-    "app-dts-dmo-ui" = {
-      email = module.bootstrap_service_accounts["app-dts-dmo-ui"].email
-      iam_email = module.bootstrap_service_accounts["app-dts-dmo-ui"].iam_email
+    "app-dts-ui" = {
+      email = module.bootstrap_service_accounts["app-dts-ui"].email
+      iam_email = module.bootstrap_service_accounts["app-dts-ui"].iam_email
     }
-    "workflow-dts-dmo-api" = {
-      email = module.bootstrap_service_accounts["workflow-dts-dmo-api"].email
-      iam_email = module.bootstrap_service_accounts["workflow-dts-dmo-api"].iam_email
+    "workflow-dts-api" = {
+      email = module.bootstrap_service_accounts["workflow-dts-api"].email
+      iam_email = module.bootstrap_service_accounts["workflow-dts-api"].iam_email
     }
     "rclone-admin-transfers" = {
       email = module.bootstrap_service_accounts["rclone-admin-transfers"].email

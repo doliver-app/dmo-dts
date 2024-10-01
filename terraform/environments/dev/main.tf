@@ -21,9 +21,9 @@ locals {
   default_prefix               = data.terraform_remote_state.bootstrap.outputs.common_config.default_prefix
   tf_service_account           = data.terraform_remote_state.bootstrap.outputs.common_config.tf_service_account
   vpc_network                  = data.terraform_remote_state.bootstrap.outputs.common_config.vpc_network
-  api_service_account          = data.terraform_remote_state.bootstrap.outputs.service_accounts.run-dts-dmo-api
-  ui_service_account           = data.terraform_remote_state.bootstrap.outputs.service_accounts.app-dts-dmo-ui
-  workflows_service_account    = data.terraform_remote_state.bootstrap.outputs.service_accounts.workflow-dts-dmo-api
+  api_service_account          = data.terraform_remote_state.bootstrap.outputs.service_accounts.run-dts-api
+  ui_service_account           = data.terraform_remote_state.bootstrap.outputs.service_accounts.app-dts-ui
+  workflows_service_account    = data.terraform_remote_state.bootstrap.outputs.service_accounts.workflow-dts-api
   rclone_admin_service_account = data.terraform_remote_state.bootstrap.outputs.service_accounts.rclone-admin-transfers
   secret_manager_secrets       = data.terraform_remote_state.bootstrap.outputs.secret_manager_secrets
   app_engine_location          = local.default_region == "us-central1" ? "us-central" : local.default_region
@@ -81,7 +81,7 @@ resource "google_artifact_registry_repository_iam_binding" "drive_transfer_servi
   repository = "drive-transfer-service"
   role       = "roles/artifactregistry.reader"
   members = [
-    "principal://iam.googleapis.com/projects/${module.project.number}/locations/global/workloadIdentityPools/${module.project.project_id}.svc.id.goog/subject/ns/dts-dmo-admin/sa/sa-rclone-admin-transfers"
+    "principal://iam.googleapis.com/projects/${module.project.number}/locations/global/workloadIdentityPools/${module.project.project_id}.svc.id.goog/subject/ns/dts-admin/sa/sa-rclone-admin-transfers"
   ]
 
   depends_on = [
@@ -166,7 +166,7 @@ resource "google_firebase_project" "default" {
 # Firestore Database
 resource "google_firestore_database" "database" {
   project                 = module.project.project_id
-  name                    = "dts-dmo-${var.environment}"
+  name                    = "dts-${var.environment}"
   location_id             = "nam5"
   type                    = "FIRESTORE_NATIVE"
   delete_protection_state = "DELETE_PROTECTION_ENABLED"
@@ -236,7 +236,7 @@ module "rclone_config_bucket" {
   versioning    = true
   iam = {
     "roles/storage.admin" = [
-      "principal://iam.googleapis.com/projects/${module.project.number}/locations/global/workloadIdentityPools/${module.project.project_id}.svc.id.goog/subject/ns/dts-dmo-admin/sa/sa-rclone-admin-transfers",
+      "principal://iam.googleapis.com/projects/${module.project.number}/locations/global/workloadIdentityPools/${module.project.project_id}.svc.id.goog/subject/ns/dts-admin/sa/sa-rclone-admin-transfers",
       local.api_service_account.iam_email
     ]
   }

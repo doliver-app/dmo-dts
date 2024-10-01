@@ -30,7 +30,7 @@ tfenv use 1.9.5
 - `derekmoliver.altostrat.com` (Domain associated with the Google Workspace instance, i.e. `example.com`)
 - `allAdmins@derekmoliver.altostrat.com` (Google Group email address that contains "admin" users, i.e. `drive-transfer-service-admins@example.com`)
 - `us-central1` (GCP region where you would like to deploy your resources, i.e. `us-central1`)
-- `dts-dmo` (3-7 character prefix that will be used to name some resources, i.e. `dts-dmo`)
+- `gts` (3-7 character prefix that will be used to name some resources, i.e. `dts`)
 - `dev` (the environment you will be deploying this solution to, i.e. `dev`, `uat`, `prod`)
 
 You also should set IP CIDR block values in `terraform/environments/bootstrap/networks.tf.example` so they do not overlap with existing subnets.
@@ -50,10 +50,10 @@ Outputs:
 common_config = {
   "billing_account_id" = "01C728-C73DD8-AB1248"
   "bootstrap_project_id" = "dmo-test-higashi"
-  "default_prefix" = "dts-dmo"
+  "default_prefix" = "gts"
   "default_region" = "us-central1"
   "tf_service_account" = "sa-drive-transfer-service-tf@dmo-test-higashi.iam.gserviceaccount.com"
-  "tf_state_bucket" = "bkt-dts-dmo-dts-dmo-tf-state"
+  "tf_state_bucket" = "bkt-gts-dts-tf-state"
 }
 secret_manager_secrets = {
   ...
@@ -93,7 +93,7 @@ d. Replace the following placeholders in `cloudbuild_github.tf`:
 - `doliver-app`
 - `dmo-dts`
 - `https://github.com/doliver-app/dmo-dts.git`
-- `28601360` (Installation ID of your Cloud Build GitHub app. Your installation ID can be found in the URL of your Cloud Build GitHub App. You can find this value by navigating to your repository's "Settings" > "GitHub Apps" > "Google Cloud Build" > "Configure". In the URL, `https://github.com/settings/installations/1234567`, the installation ID is the numerical value `1234567`)
+- `55494224` (Installation ID of your Cloud Build GitHub app. Your installation ID can be found in the URL of your Cloud Build GitHub App. You can find this value by navigating to your repository's "Settings" > "GitHub Apps" > "Google Cloud Build" > "Configure". In the URL, `https://github.com/settings/installations/1234567`, the installation ID is the numerical value `1234567`)
 e. Navigate to `https://console.cloud.google.com/cloud-build/triggers;region=global/connect?project=48703874495` to finish connecting Github to your project. Ensure you select the same region for the connection as the triggers (i.e. us-central1).
 
 ### Gitlab Enterprise (`cloudbuild_gitlab.tf`):

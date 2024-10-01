@@ -68,7 +68,7 @@ group_user_limit = os.environ.get("GROUP_USER_LIMIT")
 environment_app = initialize_app(name=environment)
 db = firestore.client(app=environment_app)
 db._database_string_internal = (
-    f"projects/{project_id}/databases/dts-dmo-{environment}"
+    f"projects/{project_id}/databases/dts-{environment}"
 )
 configs_ref = db.collection('configs')
 jobs_ref = db.collection('jobs')

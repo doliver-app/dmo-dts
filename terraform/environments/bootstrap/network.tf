@@ -78,7 +78,7 @@ module "firewall" {
 
 resource "google_vpc_access_connector" "connector" {
   project = module.project.project_id
-  name    = "dts-dmo-serverless-vpc"
+  name    = "dts-serverless-vpc"
   region  = var.default_region
   subnet {
     project_id = module.project.project_id

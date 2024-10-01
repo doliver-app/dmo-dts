@@ -447,7 +447,7 @@ module "cloud_run" {
 | [ingress](variables.tf#L119) | Ingress settings. | <code>string</code> |  | <code>null</code> |
 | [labels](variables.tf#L136) | Resource labels. | <code>map&#40;string&#41;</code> |  | <code>&#123;&#125;</code> |
 | [launch_stage](variables.tf#L142) | The launch stage as defined by Google Cloud Platform Launch Stages. | <code>string</code> |  | <code>null</code> |
-| dts-dmo(variables.tf#L164) | Optional prefix used for resource names. | <code>string</code> |  | <code>null</code> |
+| gts(variables.tf#L164) | Optional prefix used for resource names. | <code>string</code> |  | <code>null</code> |
 | [revision](variables.tf#L184) | Revision template configurations. | <code title="object&#40;&#123;&#10;  name                       &#61; optional&#40;string&#41;&#10;  gen2_execution_environment &#61; optional&#40;bool&#41;&#10;  max_concurrency            &#61; optional&#40;number&#41;&#10;  max_instance_count         &#61; optional&#40;number&#41;&#10;  min_instance_count         &#61; optional&#40;number&#41;&#10;  vpc_access &#61; optional&#40;object&#40;&#123;&#10;    connector &#61; optional&#40;string&#41;&#10;    egress    &#61; optional&#40;string&#41;&#10;    subnet    &#61; optional&#40;string&#41;&#10;    tags      &#61; optional&#40;list&#40;string&#41;&#41;&#10;  &#125;&#41;&#41;&#10;  timeout &#61; optional&#40;string&#41;&#10;&#125;&#41;">object&#40;&#123;&#8230;&#125;&#41;</code> |  | <code>&#123;&#125;</code> |
 | [service_account](variables.tf#L211) | Service account email. Unused if service account is auto-created. | <code>string</code> |  | <code>null</code> |
 | [service_account_create](variables.tf#L217) | Auto-create service account. | <code>bool</code> |  | <code>false</code> |

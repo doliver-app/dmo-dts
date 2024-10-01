@@ -31,7 +31,7 @@ service_accounts:
         - "roles/serviceusage.serviceUsageAdmin"
         - "roles/storage.admin"
     storage_iam:
-      "bkt-dts-dmo-dts-dmo-tf-state":  #TODO: STEP 4
+      "bkt-gts-dts-tf-state":  #TODO: STEP 4
         - "roles/storage.admin"
   "drive-transfer-service-api":
     prefix: "cb"
@@ -51,9 +51,9 @@ service_accounts:
         - "roles/secretmanager.secretAccessor"
         - "roles/storage.admin"
     storage_iam:
-      "bkt-dts-dmo-dts-dmo-cb-logs": #TODO: STEP 4
+      "bkt-gts-dts-cb-logs": #TODO: STEP 4
         - "roles/storage.admin"
-      "bkt-dts-dmo-dts-dmo-cb-artifacts": #TODO: STEP 4
+      "bkt-gts-dts-cb-artifacts": #TODO: STEP 4
         - "roles/storage.admin"
   "drive-transfer-service-ui":
     prefix: "cb"
@@ -75,9 +75,9 @@ service_accounts:
         - "roles/storage.admin"
         - "roles/appengine.appAdmin"
     storage_iam:
-      "bkt-dts-dmo-dts-dmo-cb-logs": #TODO: STEP 4
+      "bkt-gts-dts-cb-logs": #TODO: STEP 4
         - "roles/storage.admin"
-      "bkt-dts-dmo-dts-dmo-cb-artifacts": #TODO: STEP 4
+      "bkt-gts-dts-cb-artifacts": #TODO: STEP 4
         - "roles/storage.admin"
   "container-builder":
     prefix: "cb"
@@ -96,9 +96,9 @@ service_accounts:
         - "roles/secretmanager.secretAccessor"
         - "roles/storage.admin"
     storage_iam:
-      "bkt-dts-dmo-dts-dmo-cb-logs": #TODO: STEP 4
+      "bkt-gts-dts-cb-logs": #TODO: STEP 4
         - "roles/storage.admin"
-      "bkt-dts-dmo-dts-dmo-cb-artifacts": #TODO: STEP 4
+      "bkt-gts-dts-cb-artifacts": #TODO: STEP 4
         - "roles/storage.admin"
   "drive-transfer-service-cd":
     prefix: "sa"
@@ -112,7 +112,7 @@ service_accounts:
         - "roles/clouddeploy.jobRunner"
         - "roles/run.admin"
     storage_iam: {}
-  "app-dts-dmo-ui":
+  "app-dts-ui":
     prefix: "sa"
     sa_iam:
       "roles/iam.serviceAccountUser":
@@ -123,14 +123,14 @@ service_accounts:
         - "roles/datastore.user"
         - "roles/storage.admin"
     storage_iam: {}
-  "run-dts-dmo-api":
+  "run-dts-api":
     prefix: "sa"
     sa_iam:
       "roles/iam.serviceAccountUser":
         - "serviceAccount:sa-drive-transfer-service-tf@dmo-test-higashi.iam.gserviceaccount.com" #TODO: STEP 4
         - "serviceAccount:sa-drive-transfer-service-cd@dmo-test-higashi.iam.gserviceaccount.com" #TODO: STEP 4
       "roles/iam.serviceAccountTokenCreator":
-        - "serviceAccount:sa-run-dts-dmo-api@dmo-test-higashi.iam.gserviceaccount.com" #TODO: STEP 4
+        - "serviceAccount:sa-run-dts-api@dmo-test-higashi.iam.gserviceaccount.com" #TODO: STEP 4
     project_iam:
       "dmo-test-higashi": #TODO: STEP 4
         - "roles/datastore.user"
@@ -139,11 +139,11 @@ service_accounts:
         - "roles/storage.admin"
         - "roles/workflows.invoker"
     storage_iam: {}
-  "workflow-dts-dmo-api":
+  "workflow-dts-api":
     prefix: "sa"
     sa_iam:
       "roles/iam.serviceAccountUser":
-        - "serviceAccount:sa-run-dts-dmo-api@dmo-test-higashi.iam.gserviceaccount.com" #TODO: STEP 4
+        - "serviceAccount:sa-run-dts-api@dmo-test-higashi.iam.gserviceaccount.com" #TODO: STEP 4
         - "serviceAccount:sa-drive-transfer-service-tf@dmo-test-higashi.iam.gserviceaccount.com" #TODO: STEP 4
     project_iam:
       "dmo-test-higashi": #TODO: STEP 4

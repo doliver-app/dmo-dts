@@ -18,7 +18,7 @@ resource "google_cloudbuildv2_connection" "github_host_connection" {
   name     = "github-host"
 
   github_config {
-    app_installation_id = "28601360"
+    app_installation_id = "55494224"
     authorizer_credential {
       oauth_token_secret_version = "projects/${module.project.project_id}/secrets/github-pat/versions/latest"
     }

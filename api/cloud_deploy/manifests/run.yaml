@@ -23,7 +23,7 @@ spec:
     spec:
       containerConcurrency: 80
       timeoutSeconds: 300
-      serviceAccountName: sa-run-dts-dmo-api@dmo-test-higashi.iam.gserviceaccount.com
+      serviceAccountName: sa-run-dts-api@dmo-test-higashi.iam.gserviceaccount.com
       containers:
       - name: api
         image: us-central1-docker.pkg.dev/dmo-test-higashi/drive-transfer-service/api
@@ -53,11 +53,11 @@ spec:
         - name: REGION
           value: us-central1
         - name: CLOUD_RUN_SA
-          value: sa-run-dts-dmo-api@dmo-test-higashi.iam.gserviceaccount.com
+          value: sa-run-dts-api@dmo-test-higashi.iam.gserviceaccount.com
         - name: RCLONE_ADMIN_SA
           value: sa-rclone-admin-transfers@dmo-test-higashi.iam.gserviceaccount.com
         - name: RCLONE_CONFIG_BUCKET
-          value: bkt-dts-dmo-rclone-config-mount
+          value: bkt-gts-rclone-config-mount
         resources:
           limits:
             cpu: 2000m

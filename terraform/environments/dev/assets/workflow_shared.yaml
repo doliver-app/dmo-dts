@@ -49,7 +49,7 @@ main:
                   - getJobDocumentFirestore:
                       call: googleapis.firestore.v1.projects.databases.documents.get
                       args:
-                        name: ${"projects/" + common.projectId + "/databases/dts-dmo-" + common.environment + "/documents/" + firestore.jobCollection + "/" + common.jobId}
+                        name: ${"projects/" + common.projectId + "/databases/dts-" + common.environment + "/documents/" + firestore.jobCollection + "/" + common.jobId}
                       result: jobConfig
                   - checkJobChildren:
                       switch:
@@ -59,7 +59,7 @@ main:
                                 call: googleapis.firestore.v1.projects.databases.documents.list
                                 args:
                                   collectionId: "children"
-                                  parent: ${"projects/" + common.projectId + "/databases/dts-dmo-" + common.environment + "/documents/" + firestore.jobCollection + "/" + common.jobId}
+                                  parent: ${"projects/" + common.projectId + "/databases/dts-" + common.environment + "/documents/" + firestore.jobCollection + "/" + common.jobId}
                                 result: jobChildConfigResults
                             - createJobChildrenConfigMap:
                                 for: 
@@ -76,7 +76,7 @@ main:
                   - getSrcDocumentFirestore:
                       call: googleapis.firestore.v1.projects.databases.documents.get
                       args:
-                        name: ${"projects/" + common.projectId + "/databases/dts-dmo-" + common.environment + "/documents/" + common.srcConfigRef}
+                        name: ${"projects/" + common.projectId + "/databases/dts-" + common.environment + "/documents/" + common.srcConfigRef}
                       result: srcConfig
                   - checkSrcChildren:
                       switch:
@@ -86,7 +86,7 @@ main:
                                 call: googleapis.firestore.v1.projects.databases.documents.list
                                 args:
                                   collectionId: "children"
-                                  parent: ${"projects/" + common.projectId + "/databases/dts-dmo-" + common.environment + "/documents/" + common.srcConfigRef}
+                                  parent: ${"projects/" + common.projectId + "/databases/dts-" + common.environment + "/documents/" + common.srcConfigRef}
                                 result: srcChildConfigResults
                             - createSrcChildConfigMap:
                                 for: 
@@ -102,7 +102,7 @@ main:
                   - getDstDocumentFirestore:
                       call: googleapis.firestore.v1.projects.databases.documents.get
                       args:
-                        name: ${"projects/" + common.projectId + "/databases/dts-dmo-" + common.environment + "/documents/" + common.dstConfigRef}
+                        name: ${"projects/" + common.projectId + "/databases/dts-" + common.environment + "/documents/" + common.dstConfigRef}
                       result: dstConfig
     - assignConfigVars:
         assign:
@@ -174,21 +174,21 @@ submitRcloneJob:
           - clusterLocation: ${sys.get_env("CLUSTER_LOCATION")}
           - clusterId: ${sys.get_env("CLUSTER_NAME")}
           - clusterFullName: ${"projects/" + common.projectId + "/locations/" + clusterLocation + "/clusters/" + clusterId}
-          - clusterNamespace: ${"dts-dmo-" + common.userType}
+          - clusterNamespace: ${"dts-" + common.userType}
     - assignJobManifestVars:
         assign:
           - dedupeJobMetadata:
-              namespace: ${"dts-dmo-" + common.userType}
+              namespace: ${"dts-" + common.userType}
               generateName: ${"rclone-" + common.userType + "-dedupe-" + text.to_lower(text.replace_all(common.jobId, "/", "-")) + "-"}
               labels:
-                "kueue.x-k8s.io/queue-name": ${"dts-dmo-" + common.userType + "-lq"}
+                "kueue.x-k8s.io/queue-name": ${"dts-" + common.userType + "-lq"}
                 job-id: ${text.replace_all(common.jobId, "/", "-")}
                 job-type: "dedupe"
           - rootJobMetadata:
-              namespace: ${"dts-dmo-" + common.userType}
+              namespace: ${"dts-" + common.userType}
               generateName: ${"rclone-" + common.userType + "-" + common.jobType + "-root-" + text.to_lower(text.replace_all(common.jobId, "/", "-")) + "-"}
               labels:
-                "kueue.x-k8s.io/queue-name": ${"dts-dmo-" + common.userType + "-lq"}
+                "kueue.x-k8s.io/queue-name": ${"dts-" + common.userType + "-lq"}
                 job-id: ${text.replace_all(common.jobId, "/", "-")}
                 job-type: "root"
           - jobTemplateMetadata:
@@ -372,10 +372,10 @@ submitRcloneJob:
                                     - assignChildJobManifestVars:
                                         assign:
                                           - childJobMetadata:
-                                              namespace: ${"dts-dmo-" + common.userType}
+                                              namespace: ${"dts-" + common.userType}
                                               generateName: ${"rclone-" + common.userType + "-" + common.jobType + "-child-" + idx + "-" + text.to_lower(common.jobId) + "-"}
                                               labels:
-                                                "kueue.x-k8s.io/queue-name": ${"dts-dmo-" + common.userType + "-lq"}
+                                                "kueue.x-k8s.io/queue-name": ${"dts-" + common.userType + "-lq"}
                                                 root-job-id: ${common.jobId}
                                                 job-id: ${childJobId}
                                                 job-type: "child"
@@ -483,7 +483,7 @@ submitRcloneJob:
                                         call: setJobStatus
                                         args:
                                           jobConfig: ${jobConfig}
-                                          jobConfigPath: ${"projects/" + common.projectId + "/databases/dts-dmo-" + common.environment + "/documents/" + firestore.jobCollection + "/" + common.jobId}
+                                          jobConfigPath: ${"projects/" + common.projectId + "/databases/dts-" + common.environment + "/documents/" + firestore.jobCollection + "/" + common.jobId}
                                           statusUpdates: ${statusUpdatesDedupeError}
                                         result: jobConfig
                               next: checkDedupeJobStatusComplete
@@ -545,7 +545,7 @@ submitRcloneJob:
                                             call: setJobStatus
                                             args:
                                               jobConfig: ${jobChildConfigs[jobManifestId]}
-                                              jobConfigPath: ${"projects/" + common.projectId + "/databases/dts-dmo-" + common.environment + "/documents/" + firestore.jobCollection + "/" + common.jobId + "/children/" + jobManifestId}
+                                              jobConfigPath: ${"projects/" + common.projectId + "/databases/dts-" + common.environment + "/documents/" + firestore.jobCollection + "/" + common.jobId + "/children/" + jobManifestId}
                                               statusUpdates: ${statusUpdatesJobRunning}
                                             result: jobChildStatusRunningResult
                                         - assignChildJobStatusUpdateRunning:
@@ -557,7 +557,7 @@ submitRcloneJob:
                                             call: setJobStatus
                                             args:
                                               jobConfig: ${jobConfig}
-                                              jobConfigPath: ${"projects/" + common.projectId + "/databases/dts-dmo-" + common.environment + "/documents/" + firestore.jobCollection + "/" + common.jobId}
+                                              jobConfigPath: ${"projects/" + common.projectId + "/databases/dts-" + common.environment + "/documents/" + firestore.jobCollection + "/" + common.jobId}
                                               statusUpdates: ${statusUpdatesJobRunning}
                                             result: jobConfig    
                         - createJob:
@@ -621,7 +621,7 @@ submitRcloneJob:
                                                                       call: setJobStatus
                                                                       args:
                                                                         jobConfig: ${jobChildConfigs[jobManifestId]}
-                                                                        jobConfigPath: ${"projects/" + common.projectId + "/databases/dts-dmo-" + common.environment + "/documents/" + firestore.jobCollection + "/" + common.jobId + "/children/" + jobManifestId}
+                                                                        jobConfigPath: ${"projects/" + common.projectId + "/databases/dts-" + common.environment + "/documents/" + firestore.jobCollection + "/" + common.jobId + "/children/" + jobManifestId}
                                                                         statusUpdates: ${statusUpdatesJobError}
                                                                       result: jobChildStatusErrorResult
                                                                   - assignChildJobStatusUpdateError:
@@ -633,7 +633,7 @@ submitRcloneJob:
                                                                       call: setJobStatus
                                                                       args:
                                                                         jobConfig: ${jobConfig}
-                                                                        jobConfigPath: ${"projects/" + common.projectId + "/databases/dts-dmo-" + common.environment + "/documents/" + firestore.jobCollection + "/" + common.jobId}
+                                                                        jobConfigPath: ${"projects/" + common.projectId + "/databases/dts-" + common.environment + "/documents/" + firestore.jobCollection + "/" + common.jobId}
                                                                         statusUpdates: ${statusUpdatesJobError}
                                                                       result: jobConfig    
                                                   - trackJobErrors:
@@ -690,7 +690,7 @@ submitRcloneJob:
                                                                               call: setJobStatus
                                                                               args:
                                                                                 jobConfig: ${jobChildConfigs[jobManifestId]}
-                                                                                jobConfigPath: ${"projects/" + common.projectId + "/databases/dts-dmo-" + common.environment + "/documents/" + firestore.jobCollection + "/" + common.jobId + "/children/" + jobManifestId}
+                                                                                jobConfigPath: ${"projects/" + common.projectId + "/databases/dts-" + common.environment + "/documents/" + firestore.jobCollection + "/" + common.jobId + "/children/" + jobManifestId}
                                                                                 statusUpdates: ${statusUpdatesChildJobComplete}
                                                                               result: jobChildStatusCompleteResult
                                                                           - assignChildJobStatusUpdateComplete:
@@ -730,7 +730,7 @@ submitRcloneJob:
                                       call: setJobStatus
                                       args:
                                         jobConfig: ${jobConfig}
-                                        jobConfigPath: ${"projects/" + common.projectId + "/databases/dts-dmo-" + common.environment + "/documents/" + firestore.jobCollection + "/" + common.jobId}
+                                        jobConfigPath: ${"projects/" + common.projectId + "/databases/dts-" + common.environment + "/documents/" + firestore.jobCollection + "/" + common.jobId}
                                         statusUpdates: ${statusUpdatesRootJobComplete}
                                       result: jobConfig
                               - condition: ${len(jobCompletes) < len(jobManifests)}

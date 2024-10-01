@@ -1,0 +1,16 @@
+{
+    "firestore": {
+      "dbConfig": {
+        "projectId": "dmo-test-higashi",
+        "dbName": "dts-dev",
+        "configName": "jobs"
+      }
+    },
+    "app": {
+        "api": "https://drive-transfer-service-api-48703874495.us-central1.run.app",
+        "port": 8080
+    },
+    "secret": {
+      "clientId": "rclone-ui-oauth-client-id"
+    }
+}
